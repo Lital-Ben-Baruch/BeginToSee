@@ -194,7 +194,9 @@ if __name__ == "__main__":
 
     user_check = input("Do you want to check color identification? (yes/no): ").strip().lower()
     if user_check == 'yes':
+        print("press q to exit")
         check_colors_with_webcam(results)
+
     elif user_check == 'no':
         print("Exiting...")
         exit()
