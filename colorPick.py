@@ -1,11 +1,11 @@
-# ------------------------- colorPick.py -------------------------
-# Author: Lital H. Ben Baruch
-# Date: 25th September 2023
-# Contact: lital.h.ben.baruch@gmail.com
-# Description: This code is designed for detecting and tracking specified colors in real-time using a webcam.
-# It provides the functionality to adjust and save HSV (Hue, Saturation, Value) bounds for different colors and then
-# tests the color detection using those bounds. The comments added aim to clarify the purpose of each function and the
-# main logic of the script.
+"""
+colorPick.py
+Author: Lital H. Ben Baruch
+Date: 25th September 2023
+Contact: lital.h.ben.baruch@gmail.com
+Description: Detects and tracks specified colors in real-time using a webcam.
+Adjusts and saves HSV (Hue, Saturation, Value) bounds for different colors and tests the color detection.
+"""
 
 
 import cv2
@@ -13,26 +13,25 @@ import numpy as np
 import json
 
 
-# Save the color values to a JSON file
-def save_values_to_file(values_dict, filename='saved_colors.json'):
+def save_values_to_file(values_dict: dict, filename: str = 'saved_colors.json') -> None:
+    """Save the color values to a JSON file."""
     with open(filename, 'w') as f:
-        json.dump(values_dict, f, indent=4)  # Using indent=4 for pretty printing
+        json.dump(values_dict, f, indent=4)
 
 
-# Load the color values from a JSON file
-def load_values_from_file(filename='saved_colors.json'):
+def load_values_from_file(filename: str = 'saved_colors.json') -> dict:
+    """Load the color values from a JSON file."""
     with open(filename, 'r') as f:
         return json.load(f)
 
 
-# Placeholder function for OpenCV trackbars
-def empty(x):
+def empty(x: int) -> None:
+    """Placeholder function for OpenCV trackbars."""
     pass
 
 
-# Resize an image to fit within given width and height, maintaining the aspect ratio
-
-def resize_image(image, width, height):
+def resize_image(image: np.ndarray, width: int, height: int) -> np.ndarray:
+    """Resize an image to fit within given width and height, maintaining the aspect ratio."""
     aspect_ratio = image.shape[1] / float(image.shape[0])
     if width / height >= aspect_ratio:
         return cv2.resize(image, (int(height * aspect_ratio), height))
@@ -40,10 +39,10 @@ def resize_image(image, width, height):
         return cv2.resize(image, (width, int(width / aspect_ratio)))
 
 
-# Get initial color values based on color name
-def get_initial_values(color):
-    # Define initial color values for various colors in HSV format
+def get_initial_values(color_name: str) -> list:
+    """Get initial color values based on color name."""
     colors = {
+        # Define initial color values for various colors in HSV format
         "sky_blue": [85, 130, 100, 255, 100, 255],
         "green": [35, 85, 60, 255, 40, 255],
         "light_green": [45, 75, 50, 255, 50, 255],
@@ -62,9 +61,9 @@ def get_initial_values(color):
 
 
 # Track and adjust color values in real-time
-def color_tracker(source, color="default"):
-    is_webcam = False
-    if isinstance(source, int):  # If source is an integer, assume it's a webcam index
+def color_tracker(source, color_name: str = "default") -> dict:
+    """Track and adjust color values in real-time."""
+    if isinstance(source, int):  # Check if source is an integer (webcam index)
         is_webcam = True
         cap = cv2.VideoCapture(source)
 
@@ -137,8 +136,8 @@ def color_tracker(source, color="default"):
     return color_values
 
 
-# Check the detected colors in real-time using a webcam
-def check_colors_with_webcam(color_values):
+def check_colors_with_webcam(color_values: dict) -> None:
+    """Check the detected colors in real-time using a webcam."""
     cap = cv2.VideoCapture(0)
 
     while True:
@@ -168,27 +167,23 @@ def check_colors_with_webcam(color_values):
     cv2.destroyAllWindows()
 
 
-# Main execution
 if __name__ == "__main__":
     user_input = input("Do you want to initialize the color range for this project? (yes/no): ").strip().lower()
 
     results = {}
 
     if user_input == 'yes':
-        source_image = 0  # Or your image path
+        source_image = 0  # This could be configurable
         colors_to_process = ["yellow", "blue", "purple", "pink"]
 
         for color_name in colors_to_process:
             print(f"Tracking for {color_name}...")
             values = color_tracker(source_image, color_name)
             print(f"values selected for {color_name} : {', '.join(map(str, values[color_name].values()))}")
-
             results[color_name] = values[color_name]  # Flatten the nested dictionary
 
-        # Save the results to a file
         save_values_to_file(results)
 
-    # If not initializing, load the values from the saved file
     elif user_input == 'no':
         results = load_values_from_file()
         print("Loaded color values from file.")
@@ -197,7 +192,6 @@ if __name__ == "__main__":
         print("Invalid input. Exiting...")
         exit()
 
-    # Check the identified colors using the webcam
     user_check = input("Do you want to check color identification? (yes/no): ").strip().lower()
     if user_check == 'yes':
         check_colors_with_webcam(results)
