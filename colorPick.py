@@ -6,10 +6,35 @@ Contact: lital.h.ben.baruch@gmail.com
 Description: Detects and tracks specified colors in real-time using a webcam.
 Adjusts and saves HSV (Hue, Saturation, Value) bounds for different colors and tests the color detection.
 """
+import os
 
 import cv2
 import numpy as np
 import json
+import warnings
+
+MAX_WIDTH = 500
+MAX_HEIGHT = 500
+
+colors = {
+    "sky_blue": [85, 130, 100, 255, 100, 255],
+    "green": [35, 85, 60, 255, 40, 255],
+    "light_green": [45, 75, 50, 255, 50, 255],
+    "orange": [10, 30, 100, 255, 80, 255],
+    "red": [0, 180, 50, 255, 50, 255],
+    "yellow": [25, 35, 50, 255, 50, 255],
+    "dark_blue": [100, 140, 50, 255, 50, 255],
+    "purple": [140, 160, 50, 255, 50, 255],
+    "pink": [150, 170, 50, 255, 50, 255],
+    "brown": [5, 25, 50, 200, 20, 200],
+    "gray": [0, 179, 0, 50, 10, 200],
+    "black": [0, 179, 0, 255, 0, 40],
+    "default": [0, 179, 0, 255, 0, 255]
+}
+
+# Suppress the specific warning message
+warnings.filterwarnings("ignore", category=UserWarning, message="SourceReaderCB::~SourceReaderCB terminating async "
+                                                                "callback")
 
 
 def save_values_to_file(values_dict: dict, filename: str = 'saved_colors.json') -> None:
@@ -18,10 +43,10 @@ def save_values_to_file(values_dict: dict, filename: str = 'saved_colors.json') 
         json.dump(values_dict, f, indent=4)
 
 
-def load_values_from_file(filename: str = 'saved_colors.json') -> dict:
-    """Load the color values from a JSON file."""
-    with open(filename, 'r') as f:
-        return json.load(f)
+# def load_values_from_file(filename: str = 'saved_colors.json') -> dict:
+#     """Load the color values from a JSON file."""
+#     with open(filename, 'r') as f:
+#         return json.load(f)
 
 
 def empty(x: int) -> None:
@@ -40,42 +65,11 @@ def resize_image(image: np.ndarray, width: int, height: int) -> np.ndarray:
 
 def get_initial_values(color_name: str) -> list:
     """Get initial color values based on color name."""
-    colors = {
-        # Define initial color values for various colors in HSV format
-        "sky_blue": [85, 130, 100, 255, 100, 255],
-        "green": [35, 85, 60, 255, 40, 255],
-        "light_green": [45, 75, 50, 255, 50, 255],
-        "orange": [10, 30, 100, 255, 80, 255],
-        "red": [0, 180, 50, 255, 50, 255],
-        "yellow": [25, 35, 50, 255, 50, 255],
-        "dark_blue": [100, 140, 50, 255, 50, 255],
-        "purple": [140, 160, 50, 255, 50, 255],
-        "pink": [150, 170, 50, 255, 50, 255],
-        "brown": [5, 25, 50, 200, 20, 200],
-        "gray": [0, 179, 0, 50, 10, 200],
-        "black": [0, 179, 0, 255, 0, 40],
-        "default": [0, 179, 0, 255, 0, 255]
-    }
     return colors.get(color_name, colors["default"])
 
 
 def get_color_choice():
     """Get user's choice of color."""
-    colors = {
-        "sky_blue": [85, 130, 100, 255, 100, 255],
-        "green": [35, 85, 60, 255, 40, 255],
-        "light_green": [45, 75, 50, 255, 50, 255],
-        "orange": [10, 30, 100, 255, 80, 255],
-        "red": [0, 180, 50, 255, 50, 255],
-        "yellow": [25, 35, 50, 255, 50, 255],
-        "dark_blue": [100, 140, 50, 255, 50, 255],
-        "purple": [140, 160, 50, 255, 50, 255],
-        "pink": [150, 170, 50, 255, 50, 255],
-        "brown": [5, 25, 50, 200, 20, 200],
-        "gray": [0, 179, 0, 50, 10, 200],
-        "black": [0, 179, 0, 255, 0, 40],
-        "default": [0, 179, 0, 255, 0, 255]
-    }
 
     # Print available color choices
     print("Available colors:")
@@ -85,7 +79,7 @@ def get_color_choice():
     print(f"{len(colors) + 1}. Add a different color")
 
     # Get user's choice as a comma-separated string
-    choice_str = input("Choose the colors you want to process (separated by commas, e.g., 1,3,5): ").strip()
+    choice_str = input("Choose the colors you want to process (separated by commas, e.g., 1, 3, 5): ").strip()
 
     # Split the user's input into a list of integers
     choice_list = [int(item) for item in choice_str.split(',')]
@@ -109,7 +103,6 @@ def get_color_choice():
     return chosen_colors
 
 
-# Track and adjust color values in real-time
 def color_tracker(source, color_name: str = "default") -> dict:
     """Track and adjust color values in real-time."""
     is_webcam = False
@@ -156,9 +149,7 @@ def color_tracker(source, color_name: str = "default") -> dict:
         bottom_row = np.hstack([mask_colored, img_result])
         combined_img = np.vstack([top_row, bottom_row])
 
-        max_width = 800
-        max_height = 800
-        resized_combined = resize_image(combined_img, max_width, max_height)
+        resized_combined = resize_image(combined_img, MAX_WIDTH, MAX_HEIGHT)
 
         cv2.imshow("All Images", resized_combined)
 
@@ -186,74 +177,104 @@ def color_tracker(source, color_name: str = "default") -> dict:
     return color_values
 
 
+def create_colors_mask(frame, color_values):
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    combined_mask = np.zeros_like(frame[:, :, 0])  # Initialize a black mask
+
+    # Check each color and apply its mask
+    for color_name, values in color_values.items():
+        lower = np.array([values['hue_min'], values['sat_min'], values['val_min']])
+        upper = np.array([values['hue_max'], values['sat_max'], values['val_max']])
+
+        mask = cv2.inRange(hsv, lower, upper)
+        combined_mask = cv2.bitwise_or(combined_mask, mask)
+
+    # Display the result
+    result = cv2.bitwise_and(frame, frame, mask=combined_mask)
+    return result
+
+
 def check_colors_with_source(source, color_values: dict) -> None:
     """Check the detected colors in real-time using a webcam or an image."""
     if isinstance(source, int):  # Check if source is an integer (webcam index)
         cap = cv2.VideoCapture(source)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            mask_colors = create_colors_mask(frame, color_values)
+            combined_img = np.hstack([mask_colors, frame])
+            cv2.imshow('Original Live Feed and Detection', combined_img)
+
+            key = cv2.waitKey(1)
+            if key & 0xFF == ord('q'):  # Check if 'q' key is pressed
+                break
+
+        cap.release()
+
     else:
-        cap = cv2.VideoCapture(source)
+        frame = cv2.imread(source)
+        resized_frame = resize_image(frame, MAX_WIDTH, MAX_HEIGHT)
+        mask_colors = create_colors_mask(frame, color_values)
+        resized_mask = resize_image(mask_colors, MAX_WIDTH, MAX_HEIGHT)
+        # cv2.imshow('Detected Colors', mask_colors)
+        # cv2.imshow('Image', frame)
+        combined_img = np.hstack([resized_frame, resized_mask])
+        cv2.imshow('Original Image and Detection', combined_img)
+        cv2.waitKey(0)
 
+
+def load_values_from_file(filename: str = 'saved_colors.json') -> dict:
+    """Load the color values from a JSON file."""
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+        if os.path.exists(filename):
+            try:
+                with open(filename, 'r') as f:
+                    return json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                print(f"Failed to open or read the file: {filename}")
+        else:
+            print(f"The file {filename} does not exist.")
 
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        combined_mask = np.zeros_like(frame[:, :, 0])  # Initialize a black mask
-
-        # Check each color and apply its mask
-        for color_name, values in color_values.items():
-            lower = np.array([values['hue_min'], values['sat_min'], values['val_min']])
-            upper = np.array([values['hue_max'], values['sat_max'], values['val_max']])
-
-            mask = cv2.inRange(hsv, lower, upper)
-            combined_mask = cv2.bitwise_or(combined_mask, mask)
-
-        # Display the result
-        result = cv2.bitwise_and(frame, frame, mask=combined_mask)
-        cv2.imshow('Detected Colors', result)
-
-        key = cv2.waitKey(1)  # Capture keypress
-
-        if key & 0xFF == ord('q'):  # Check if 'q' key is pressed
-            break
-
-    cap.release()
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        # Ask the user for a new file path
+        new_filename = input("Please provide the path to the JSON file you want to use: ").strip()
+        if new_filename:
+            filename = new_filename
 
 
 if __name__ == "__main__":
-    src_input = input("Do you want to use a webcam? (yes/no): ").strip().lower()
-    if src_input == 'yes':
+    src_input = input("Do you want to use a webcam? (yes/no) [yes]: ").strip().lower()
+    if src_input == 'yes' or src_input == '':
         source_image = 0
-        # source_input = 'webcam'
         source_input = source_image
     else:
-        path_input = input("Do you want the image ball_colors.jpg? (yes/no): ").strip().lower()
-        if path_input == 'yes':
+        path_input = input("Do you want the image ball_colors.jpg? (yes/no) [yes]:").strip().lower()
+        if path_input == 'yes' or path_input == '':
             source_image = "Resources/ball_colors.jpg"
         else:
             source_image = input("Please provide the path to the image you want to use: ").strip().lower()
         source_input = source_image
+
     colorPref_input = input(
-        "Do you want to recognize the colors yellow pink, blue and purple? (yes/no): ").strip().lower()
-    if colorPref_input == 'yes':
+        "Choose an option:\n"
+        "1. Recognize the colors yellow, pink, blue, and purple.\n"
+        "2. Recognize the colors sky_blue, green, light_green, orange, red, yellow, dark_blue, purple, and pink.\n"
+        "3. Define different colors.\n"
+        "Enter your choice (1/2/3) [3] : "
+    ).strip().lower() or '3'
+
+    if colorPref_input == '1':
         colors_to_process = ["yellow", "blue", "purple", "pink"]
-    else:
-        img = cv2.imread(source_image)
-        cv2.imshow("Image selected", img)
-        cv2.waitKey(1)
+    elif colorPref_input == '2':
+        colors_to_process = ["sky_blue", "green", "light_green", "orange", 'red', 'yellow', 'dark_blue', 'purple',
+                             'pink']
+    elif colorPref_input == '3':
         colors_to_process = get_color_choice()
         cv2.destroyAllWindows()
 
-    user_input = input("Do you want to initialize the color range for this project? (yes/no): ").strip().lower()
+    user_input = input("Do you want to initialize the color range for this project? (yes/no) [no]: ").strip().lower()
     results = {}
     if user_input == 'yes':
-        # source_image = "Resources/ball_colors.jpg"
-        # source_image = 0  # This could be configurable
-        # colors_to_process = ["yellow", "blue", "purple", "pink"]
-
         for color_name in colors_to_process:
             print(f"Tracking for {color_name}...")
             values = color_tracker(source_image, color_name)
@@ -262,19 +283,27 @@ if __name__ == "__main__":
 
         save_values_to_file(results)
 
-    elif user_input == 'no':
-        results = load_values_from_file()
-        print("Loaded color values from file.")
+    elif user_input == 'no' or user_input == '':
+        json_file = input(
+            "Do you want to load the saved_colors.json file? (yes/no) [yes]: ").strip()
+        if json_file == 'yes' or json_file == '':
+            results = load_values_from_file()
+            print("Loaded color values from saved_colors.json file.")
+        else:
+            json_file_name = input(
+                "Please provide the path to the json file you want to use:").strip()
+            results = load_values_from_file(json_file_name)
+            print(f"Loaded color values from {json_file_name} file.")
 
     else:
         print("Invalid input. Exiting...")
         exit()
 
-    user_check = input("Do you want to check color identification? (yes/no): ").strip().lower()
-    if user_check == 'yes':
+    user_check = input("Do you want to check color identification? (yes/no) [yes]: ").strip().lower()
+    if user_check == 'yes' or user_check == '':
         print("Press q to exit")
-        check_colors_with_source(source_input, results)  # Pass the source and color values
-        cv2.waitKey(0)
+        check_colors_with_source(source_input, results)
+
     elif user_check == 'no':
         print("Exiting...")
         exit()
