@@ -7,7 +7,6 @@ Description: Detects and tracks specified colors in real-time using a webcam.
 Adjusts and saves HSV (Hue, Saturation, Value) bounds for different colors and tests the color detection.
 """
 
-
 import cv2
 import numpy as np
 import json
@@ -60,9 +59,60 @@ def get_initial_values(color_name: str) -> list:
     return colors.get(color_name, colors["default"])
 
 
+def get_color_choice():
+    """Get user's choice of color."""
+    colors = {
+        "sky_blue": [85, 130, 100, 255, 100, 255],
+        "green": [35, 85, 60, 255, 40, 255],
+        "light_green": [45, 75, 50, 255, 50, 255],
+        "orange": [10, 30, 100, 255, 80, 255],
+        "red": [0, 180, 50, 255, 50, 255],
+        "yellow": [25, 35, 50, 255, 50, 255],
+        "dark_blue": [100, 140, 50, 255, 50, 255],
+        "purple": [140, 160, 50, 255, 50, 255],
+        "pink": [150, 170, 50, 255, 50, 255],
+        "brown": [5, 25, 50, 200, 20, 200],
+        "gray": [0, 179, 0, 50, 10, 200],
+        "black": [0, 179, 0, 255, 0, 40],
+        "default": [0, 179, 0, 255, 0, 255]
+    }
+
+    # Print available color choices
+    print("Available colors:")
+    for idx, color in enumerate(colors.keys(), 1):
+        print(f"{idx}. {color}")
+
+    print(f"{len(colors) + 1}. Add a different color")
+
+    # Get user's choice as a comma-separated string
+    choice_str = input("Choose the colors you want to process (separated by commas, e.g., 1,3,5): ").strip()
+
+    # Split the user's input into a list of integers
+    choice_list = [int(item) for item in choice_str.split(',')]
+
+    # Convert the list of integers into the corresponding color names
+    chosen_colors = [list(colors.keys())[i - 1] for i in choice_list]
+
+    # If user chooses to add a different color
+    if "default" in chosen_colors:
+        h_min = int(input("Enter H min value: "))
+        h_max = int(input("Enter H max value: "))
+        s_min = int(input("Enter S min value: "))
+        s_max = int(input("Enter S max value: "))
+        v_min = int(input("Enter V min value: "))
+        v_max = int(input("Enter V max value: "))
+        new_color_name = input("Enter name for the new color: ").strip()
+        colors[new_color_name] = [h_min, h_max, s_min, s_max, v_min, v_max]
+        chosen_colors.remove("default")
+        chosen_colors.append(new_color_name)
+
+    return chosen_colors
+
+
 # Track and adjust color values in real-time
 def color_tracker(source, color_name: str = "default") -> dict:
     """Track and adjust color values in real-time."""
+    is_webcam = False
     if isinstance(source, int):  # Check if source is an integer (webcam index)
         is_webcam = True
         cap = cv2.VideoCapture(source)
@@ -136,9 +186,12 @@ def color_tracker(source, color_name: str = "default") -> dict:
     return color_values
 
 
-def check_colors_with_webcam(color_values: dict) -> None:
-    """Check the detected colors in real-time using a webcam."""
-    cap = cv2.VideoCapture(0)
+def check_colors_with_source(source, color_values: dict) -> None:
+    """Check the detected colors in real-time using a webcam or an image."""
+    if isinstance(source, int):  # Check if source is an integer (webcam index)
+        cap = cv2.VideoCapture(source)
+    else:
+        cap = cv2.VideoCapture(source)
 
     while True:
         ret, frame = cap.read()
@@ -160,21 +213,46 @@ def check_colors_with_webcam(color_values: dict) -> None:
         result = cv2.bitwise_and(frame, frame, mask=combined_mask)
         cv2.imshow('Detected Colors', result)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        key = cv2.waitKey(1)  # Capture keypress
+
+        if key & 0xFF == ord('q'):  # Check if 'q' key is pressed
             break
 
     cap.release()
+    cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
-    user_input = input("Do you want to initialize the color range for this project? (yes/no): ").strip().lower()
-
-    results = {}
-
-    if user_input == 'yes':
-        source_image = 0  # This could be configurable
+    src_input = input("Do you want to use a webcam? (yes/no): ").strip().lower()
+    if src_input == 'yes':
+        source_image = 0
+        # source_input = 'webcam'
+        source_input = source_image
+    else:
+        path_input = input("Do you want the image ball_colors.jpg? (yes/no): ").strip().lower()
+        if path_input == 'yes':
+            source_image = "Resources/ball_colors.jpg"
+        else:
+            source_image = input("Please provide the path to the image you want to use: ").strip().lower()
+        source_input = source_image
+    colorPref_input = input(
+        "Do you want to recognize the colors yellow pink, blue and purple? (yes/no): ").strip().lower()
+    if colorPref_input == 'yes':
         colors_to_process = ["yellow", "blue", "purple", "pink"]
+    else:
+        img = cv2.imread(source_image)
+        cv2.imshow("Image selected", img)
+        cv2.waitKey(1)
+        colors_to_process = get_color_choice()
+        cv2.destroyAllWindows()
+
+    user_input = input("Do you want to initialize the color range for this project? (yes/no): ").strip().lower()
+    results = {}
+    if user_input == 'yes':
+        # source_image = "Resources/ball_colors.jpg"
+        # source_image = 0  # This could be configurable
+        # colors_to_process = ["yellow", "blue", "purple", "pink"]
 
         for color_name in colors_to_process:
             print(f"Tracking for {color_name}...")
@@ -194,9 +272,9 @@ if __name__ == "__main__":
 
     user_check = input("Do you want to check color identification? (yes/no): ").strip().lower()
     if user_check == 'yes':
-        print("press q to exit")
-        check_colors_with_webcam(results)
-
+        print("Press q to exit")
+        check_colors_with_source(source_input, results)  # Pass the source and color values
+        cv2.waitKey(0)
     elif user_check == 'no':
         print("Exiting...")
         exit()
