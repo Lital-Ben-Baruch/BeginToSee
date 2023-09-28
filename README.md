@@ -10,25 +10,25 @@ Welcome to BeginToSee, your gateway to the exciting world of image processing an
 ## Videos
 Explore the capabilities of the `colorPick.py` script through a series of demonstration videos:
 
-- **Video 2 - Color Detection with Webcam (Default Options)**
+- **[Video 1](https://www.youtube.com/watch?v=nVIYtBjiknQ) - Color Detection with Webcam (Default Options)**
     - Use a webcam as the image source.
     - Detect predefined colors.
     - Load color values from an existing JSON file (`saved_colors_web.json`).
     - Observe real-time color detection.
 
-- **Video 3 - Color Detection with Webcam (New Colors)**
+- **[Video 2](https://www.youtube.com/watch?v=fknPJysUATI) - Color Detection with Webcam (New Colors)**
     - Use a webcam as the image source.
     - Choose custom colors to detect.
     - Initialize color ranges for new colors.
     - Experience real-time color detection.
 
-- **Video 4 - Color Detection with Image (Default Options)**
+- **[Video 3](https://youtu.be/v0LJaIhnoO0) - Color Detection with Image (Default Options)**
     - Select an image as the source.
     - Detect predefined colors.
     - Load color values from an existing JSON file (`saved_colors_img.json`).
     - View color detection results.
 
-- **Video 5 - Color Detection with Image (New Colors)**
+- **[Video 4](https://youtu.be/0PIJ31NGWLA) - Color Detection with Image (New Colors)**
     - Choose an image as the source.
     - Define custom colors for detection.
     - Initialize color ranges for new colors.
