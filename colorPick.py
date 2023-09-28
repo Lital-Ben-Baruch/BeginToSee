@@ -11,10 +11,11 @@ import os
 import cv2
 import numpy as np
 import json
-import warnings
 
 MAX_WIDTH = 500
 MAX_HEIGHT = 500
+BB_RADIUS_CENTER = 2
+
 
 colors = {
     "sky_blue": [85, 130, 100, 255, 100, 255],
@@ -38,11 +39,6 @@ def save_values_to_file(values_dict: dict, filename: str = 'saved_colors.json') 
     with open(filename, 'w') as f:
         json.dump(values_dict, f, indent=4)
 
-
-# def load_values_from_file(filename: str = 'saved_colors.json') -> dict:
-#     """Load the color values from a JSON file."""
-#     with open(filename, 'r') as f:
-#         return json.load(f)
 
 
 def empty(x: int) -> None:
@@ -172,6 +168,7 @@ def color_tracker(source, color_name: str = "default") -> dict:
 
 
 def create_colors_mask(frame, color_values):
+    frame_result = frame.copy()
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     combined_mask = np.zeros_like(frame[:, :, 0])  # Initialize a black mask
 
@@ -182,10 +179,12 @@ def create_colors_mask(frame, color_values):
 
         mask = cv2.inRange(hsv, lower, upper)
         combined_mask = cv2.bitwise_or(combined_mask, mask)
+        # Detecting contours, adding bounding boxes, and marking the center
+        x_center, y_center = process_contours(combined_mask, frame_result)
+        cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, (0, 0, 0), cv2.FILLED)
 
-    # Display the result
     result = cv2.bitwise_and(frame, frame, mask=combined_mask)
-    return result
+    return result, frame_result
 
 
 def check_colors_with_source(source, color_values: dict) -> None:
@@ -196,8 +195,8 @@ def check_colors_with_source(source, color_values: dict) -> None:
             ret, frame = cap.read()
             if not ret:
                 break
-            mask_colors = create_colors_mask(frame, color_values)
-            combined_img = np.hstack([mask_colors, frame])
+            mask_colors, frame_res = create_colors_mask(frame, color_values)
+            combined_img = np.hstack([mask_colors, frame_res])
             cv2.imshow('Original Live Feed and Detection', combined_img)
 
             key = cv2.waitKey(1)
@@ -211,8 +210,6 @@ def check_colors_with_source(source, color_values: dict) -> None:
         resized_frame = resize_image(frame, MAX_WIDTH, MAX_HEIGHT)
         mask_colors = create_colors_mask(frame, color_values)
         resized_mask = resize_image(mask_colors, MAX_WIDTH, MAX_HEIGHT)
-        # cv2.imshow('Detected Colors', mask_colors)
-        # cv2.imshow('Image', frame)
         combined_img = np.hstack([resized_frame, resized_mask])
         cv2.imshow('Original Image and Detection', combined_img)
         cv2.waitKey(0)
@@ -234,6 +231,40 @@ def load_values_from_file(filename: str = 'saved_colors.json') -> dict:
         new_filename = input("Please provide the path to the JSON file you want to use: ").strip()
         if new_filename:
             filename = new_filename
+
+
+def process_contours(img, img_res):
+    cnt_color = (255, 0, 0)  # Blue color for drawing the detected contours.
+    cnt_thick = 3  # Thickness of the contour lines.
+    largest_area = 0  # To keep track of the largest contour's area.
+    cx, cy = 0, 0  # Initialize the center coordinates.
+
+    # findContours : Extracts contours from the binary image.
+    # RETR_EXTERNAL : Retrieves only the extreme outer contours.
+    # CHAIN_APPROX_NONE : Gets all the contour points without any approximation.
+    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    # Processing Each Contour:
+
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        # The contour is considered relevant if its area is greater than 500 (to ignore noise) and if its area is larger
+        # than the previous largest contour's area.
+        if area > 800 and area > largest_area:
+            largest_area = area
+            # Finding the Centroid:
+            # Calculates moments, which are a set of scalar values that provide information about the image's shape.
+            # The centroid (center) of the contour is calculated using these moments.
+            M = cv2.moments(contour)
+            if M["m00"] != 0:  # avoid division by zero
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+            # Visualization:
+            # The detected contour is drawn on the img_res image for visualization.
+            cv2.drawContours(img_res, contour, -1, cnt_color, cnt_thick)
+
+            # Returns the x and y coordinates of the largest contour's center.
+    return cx, cy
 
 
 if __name__ == "__main__":
