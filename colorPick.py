@@ -32,10 +32,6 @@ colors = {
     "default": [0, 179, 0, 255, 0, 255]
 }
 
-# Suppress the specific warning message
-warnings.filterwarnings("ignore", category=UserWarning, message="SourceReaderCB::~SourceReaderCB terminating async "
-                                                                "callback")
-
 
 def save_values_to_file(values_dict: dict, filename: str = 'saved_colors.json') -> None:
     """Save the color values to a JSON file."""
@@ -73,10 +69,14 @@ def get_color_choice():
 
     # Print available color choices
     print("Available colors:")
-    for idx, color in enumerate(colors.keys(), 1):
+    colors_list = list(colors.keys())
+    for idx, color in enumerate(colors_list[:-1], 1):
         print(f"{idx}. {color}")
 
-    print(f"{len(colors) + 1}. Add a different color")
+    # the last color
+    last_color_idx = len(colors_list)
+    print(f"{last_color_idx}. Other")
+    # print(f"{len(colors) + 1}. Other")
 
     # Get user's choice as a comma-separated string
     choice_str = input("Choose the colors you want to process (separated by commas, e.g., 1, 3, 5): ").strip()
@@ -89,16 +89,10 @@ def get_color_choice():
 
     # If user chooses to add a different color
     if "default" in chosen_colors:
-        h_min = int(input("Enter H min value: "))
-        h_max = int(input("Enter H max value: "))
-        s_min = int(input("Enter S min value: "))
-        s_max = int(input("Enter S max value: "))
-        v_min = int(input("Enter V min value: "))
-        v_max = int(input("Enter V max value: "))
-        new_color_name = input("Enter name for the new color: ").strip()
-        colors[new_color_name] = [h_min, h_max, s_min, s_max, v_min, v_max]
-        chosen_colors.remove("default")
-        chosen_colors.append(new_color_name)
+        default_indices = [i for i, color in enumerate(chosen_colors) if color == "default"]
+        for index in default_indices:
+            new_color_name = input(f"Enter name for the new {index + 1}-th 'default' color: ").strip()
+            chosen_colors[index] = new_color_name
 
     return chosen_colors
 
@@ -264,10 +258,10 @@ if __name__ == "__main__":
     ).strip().lower() or '3'
 
     if colorPref_input == '1':
-        colors_to_process = ["yellow", "blue", "purple", "pink"]
+        colors_to_process = ["yellow", "dark_blue", "purple", "pink"]
     elif colorPref_input == '2':
-        colors_to_process = ["sky_blue", "green", "light_green", "orange", 'red', 'yellow', 'dark_blue', 'purple',
-                             'pink']
+        colors_to_process = ["sky_blue", "green", "light_green", "orange", "red", "yellow", "dark_blue", "purple",
+                             "pink"]
     elif colorPref_input == '3':
         colors_to_process = get_color_choice()
         cv2.destroyAllWindows()
