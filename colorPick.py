@@ -308,16 +308,51 @@ if __name__ == "__main__":
 
         save_values_to_file(results)
 
+
     elif user_input == 'no' or user_input == '':
+
         json_file = input(
-            "Do you want to load the saved_colors.json file? (yes/no) [yes]: ").strip()
-        if json_file == 'yes' or json_file == '':
+
+            "Choose an option:\n"
+
+            "1. load the saved_colors.json file.\n"
+
+            "2. load the saved_colors_web.json file.\n"
+
+            "3. load the saved_colors_img.json file.\n"
+
+            "4. Define different file.\n"
+
+            "Enter your choice (1/2/3/4) [1] : "
+
+        ).strip().lower() or '3'
+
+        if json_file == '1' or json_file == '':
             results = load_values_from_file()
+
             print("Loaded color values from saved_colors.json file.")
-        else:
-            json_file_name = input(
-                "Please provide the path to the json file you want to use:").strip()
+
+        if json_file == '2':
+            json_file_name = 'saved_colors_web.json'
+
             results = load_values_from_file(json_file_name)
+
+            print(f"Loaded color values from {json_file_name} file.")
+
+        if json_file == '3':
+            json_file_name = 'saved_colors_img.json'
+
+            results = load_values_from_file(json_file_name)
+
+            print(f"Loaded color values from {json_file_name} file.")
+
+        if json_file == '4':
+            json_file_name = input(
+
+                "Please provide the path to the json file you want to use:").strip()
+
+            results = load_values_from_file(json_file_name)
+
             print(f"Loaded color values from {json_file_name} file.")
 
     else:
