@@ -14,8 +14,11 @@ import json
 
 MAX_WIDTH = 500
 MAX_HEIGHT = 500
-BB_RADIUS_CENTER = 2
+BB_RADIUS_CENTER = 8
+BB_AREA = 50
 
+# BGR : yellow, dark_blue, purple, pink, and green
+my_color_value = [[0, 255, 255], [255, 0, 0], [226, 43, 138], [147, 20, 255], [0, 252, 124]]
 
 colors = {
     "sky_blue": [85, 130, 100, 255, 100, 255],
@@ -38,7 +41,6 @@ def save_values_to_file(values_dict: dict, filename: str = 'saved_colors.json') 
     """Save the color values to a JSON file."""
     with open(filename, 'w') as f:
         json.dump(values_dict, f, indent=4)
-
 
 
 def empty(x: int) -> None:
@@ -169,9 +171,10 @@ def color_tracker(source, color_name: str = "default") -> dict:
 
 def create_colors_mask(frame, color_values):
     frame_result = frame.copy()
+    frame_result_1 = frame_result.copy()
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     combined_mask = np.zeros_like(frame[:, :, 0])  # Initialize a black mask
-
+    counter = 0
     # Check each color and apply its mask
     for color_name, values in color_values.items():
         lower = np.array([values['hue_min'], values['sat_min'], values['val_min']])
@@ -180,8 +183,13 @@ def create_colors_mask(frame, color_values):
         mask = cv2.inRange(hsv, lower, upper)
         combined_mask = cv2.bitwise_or(combined_mask, mask)
         # Detecting contours, adding bounding boxes, and marking the center
-        x_center, y_center = process_contours(combined_mask, frame_result)
-        cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, (0, 0, 0), cv2.FILLED)
+        # x_center, y_center = process_contours(combined_mask, frame_result)
+
+        x_center, y_center = process_contours_test(mask, frame_result_1)
+        cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value[counter], cv2.FILLED)
+        counter += 1
+
+        cv2.imshow('test frame_after', frame_result_1)
 
     result = cv2.bitwise_and(frame, frame, mask=combined_mask)
     return result, frame_result
@@ -233,16 +241,13 @@ def load_values_from_file(filename: str = 'saved_colors.json') -> dict:
             filename = new_filename
 
 
-def process_contours(img, img_res):
+def process_contours_test(mask, frame_result_1):
     cnt_color = (255, 0, 0)  # Blue color for drawing the detected contours.
     cnt_thick = 3  # Thickness of the contour lines.
     largest_area = 0  # To keep track of the largest contour's area.
     cx, cy = 0, 0  # Initialize the center coordinates.
 
-    # findContours : Extracts contours from the binary image.
-    # RETR_EXTERNAL : Retrieves only the extreme outer contours.
-    # CHAIN_APPROX_NONE : Gets all the contour points without any approximation.
-    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
     # Processing Each Contour:
 
@@ -250,7 +255,37 @@ def process_contours(img, img_res):
         area = cv2.contourArea(contour)
         # The contour is considered relevant if its area is greater than 500 (to ignore noise) and if its area is larger
         # than the previous largest contour's area.
-        if area > 800 and area > largest_area:
+        if area > BB_AREA and area > largest_area:
+            largest_area = area
+            # Finding the Centroid:
+            # Calculates moments, which are a set of scalar values that provide information about the image's shape.
+            # The centroid (center) of the contour is calculated using these moments.
+            M = cv2.moments(contour)
+            if M["m00"] != 0:  # avoid division by zero
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+            # Visualization:
+            # The detected contour is drawn on the img_res image for visualization.
+            cv2.drawContours(frame_result_1, contour, -1, cnt_color, cnt_thick)
+
+            # Returns the x and y coordinates of the largest contour's center.
+    return cx, cy
+
+
+def process_contours(img, img_res):
+    cnt_color = (255, 0, 0)  # Blue color for drawing the detected contours.
+    cnt_thick = 3  # Thickness of the contour lines.
+    largest_area = 0  # To keep track of the largest contour's area.
+    cx, cy = 0, 0  # Initialize the center coordinates.
+
+    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    # Processing Each Contour:
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        # The contour is considered relevant if its area is greater than BB_AREA (to ignore noise) and if its area is
+        # larger than the previous largest contour's area.
+        if area > BB_AREA and area > largest_area:
             largest_area = area
             # Finding the Centroid:
             # Calculates moments, which are a set of scalar values that provide information about the image's shape.
@@ -282,14 +317,14 @@ if __name__ == "__main__":
 
     colorPref_input = input(
         "Choose an option:\n"
-        "1. Recognize the colors yellow, pink, blue, and purple.\n"
+        "1. Recognize the colors yellow, dark_blue, purple, pink, and green.\n"
         "2. Recognize the colors sky_blue, green, light_green, orange, red, yellow, dark_blue, purple, and pink.\n"
         "3. Define different colors.\n"
         "Enter your choice (1/2/3) [3] : "
     ).strip().lower() or '3'
 
     if colorPref_input == '1':
-        colors_to_process = ["yellow", "dark_blue", "purple", "pink"]
+        colors_to_process = ["yellow", "dark_blue", "purple", "pink", "green"]
     elif colorPref_input == '2':
         colors_to_process = ["sky_blue", "green", "light_green", "orange", "red", "yellow", "dark_blue", "purple",
                              "pink"]
@@ -308,51 +343,34 @@ if __name__ == "__main__":
 
         save_values_to_file(results)
 
-
     elif user_input == 'no' or user_input == '':
-
         json_file = input(
-
             "Choose an option:\n"
-
             "1. load the saved_colors.json file.\n"
-
             "2. load the saved_colors_web.json file.\n"
-
             "3. load the saved_colors_img.json file.\n"
-
             "4. Define different file.\n"
-
             "Enter your choice (1/2/3/4) [1] : "
-
-        ).strip().lower() or '3'
+        ).strip().lower() or '1'
 
         if json_file == '1' or json_file == '':
             results = load_values_from_file()
-
             print("Loaded color values from saved_colors.json file.")
 
         if json_file == '2':
             json_file_name = 'saved_colors_web.json'
-
             results = load_values_from_file(json_file_name)
-
             print(f"Loaded color values from {json_file_name} file.")
 
         if json_file == '3':
             json_file_name = 'saved_colors_img.json'
-
             results = load_values_from_file(json_file_name)
-
             print(f"Loaded color values from {json_file_name} file.")
 
         if json_file == '4':
             json_file_name = input(
-
                 "Please provide the path to the json file you want to use:").strip()
-
             results = load_values_from_file(json_file_name)
-
             print(f"Loaded color values from {json_file_name} file.")
 
     else:
