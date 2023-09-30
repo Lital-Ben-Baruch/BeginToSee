@@ -16,10 +16,11 @@ MAX_WIDTH = 500
 MAX_HEIGHT = 500
 BB_RADIUS_CENTER = 8
 BB_AREA = 50
+draw = False
 
 # BGR : yellow, dark_blue, purple, pink, and green
 my_color_value = [[0, 255, 255], [255, 0, 0], [226, 43, 138], [147, 20, 255], [0, 252, 124]]
-
+my_points = []  # [x, y, color]
 colors = {
     "sky_blue": [85, 130, 100, 255, 100, 255],
     "green": [35, 85, 60, 255, 40, 255],
@@ -169,8 +170,14 @@ def color_tracker(source, color_name: str = "default") -> dict:
     return color_values
 
 
-def create_colors_mask(frame, color_values):
+def draw_on_canvas(points, img_res):
+    for point in points:
+        cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER, my_color_value[point[2]], cv2.FILLED)
+
+
+def create_colors_mask(frame, color_values, source):
     frame_result = frame.copy()
+    new_point = []
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     combined_mask = np.zeros_like(frame[:, :, 0])  # Initialize a black mask
     counter = 0
@@ -183,14 +190,19 @@ def create_colors_mask(frame, color_values):
         combined_mask = cv2.bitwise_or(combined_mask, mask)
         # Detecting contours, adding bounding boxes, and marking the center
         x_center, y_center = process_contours(mask, frame_result)
-        cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value[counter], cv2.FILLED)
+        if isinstance(source, int):  # Check if source is an integer (webcam index)
+            cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value[counter], cv2.FILLED)
+
+        if x_center != 0 and y_center != 0:
+            new_point.append([x_center, y_center, counter])
+
         counter += 1
 
     mask_result = cv2.bitwise_and(frame, frame, mask=combined_mask)
-    return mask_result, frame_result
+    return mask_result, frame_result, new_point
 
 
-def check_colors_with_source(source, color_values: dict) -> None:
+def check_colors_with_source(source, color_values, draw_flag):
     """Check the detected colors in real-time using a webcam or an image."""
     if isinstance(source, int):  # Check if source is an integer (webcam index)
         cap = cv2.VideoCapture(source)
@@ -198,7 +210,17 @@ def check_colors_with_source(source, color_values: dict) -> None:
             ret, frame = cap.read()
             if not ret:
                 break
-            mask_colors, frame_res = create_colors_mask(frame, color_values)
+            mask_colors, frame_res, color_points = create_colors_mask(frame, color_values, source)
+
+            # read the points from the color_points
+            if draw_flag:
+                if len(color_points):
+                    for point in color_points:
+                        my_points.append(point)
+
+                if len(my_points):
+                    draw_on_canvas(my_points, frame_res)
+
             combined_img = np.hstack([mask_colors, frame_res])
             cv2.imshow('Original Live Feed and Detection', combined_img)
 
@@ -211,7 +233,7 @@ def check_colors_with_source(source, color_values: dict) -> None:
     else:
         frame = cv2.imread(source)
         resized_frame = resize_image(frame, MAX_WIDTH, MAX_HEIGHT)
-        mask_colors = create_colors_mask(frame, color_values)
+        mask_colors, frame_res, color_points = create_colors_mask(frame, color_values, source)
         resized_mask = resize_image(mask_colors, MAX_WIDTH, MAX_HEIGHT)
         combined_img = np.hstack([resized_frame, resized_mask])
         cv2.imshow('Original Image and Detection', combined_img)
@@ -260,7 +282,7 @@ def process_contours(mask, frame_to_draw=None):
                 cx = int(M["m10"] / M["m00"])
                 cy = int(M["m01"] / M["m00"])
             # Visualization:
-            # Draw contours if a 'frame' is provided
+            # Draw contours if a 'frame_to_drawq' is provided
             if frame_to_draw is not None:
                 cv2.drawContours(frame_to_draw, contour, -1, cnt_color, cnt_thick)
 
@@ -346,7 +368,8 @@ if __name__ == "__main__":
     user_check = input("Do you want to check color identification? (yes/no) [yes]: ").strip().lower()
     if user_check == 'yes' or user_check == '':
         print("Press q to exit")
-        check_colors_with_source(source_input, results)
+        check_colors_with_source(source_input, results, draw)
+        cv2.destroyAllWindows()
 
     elif user_check == 'no':
         print("Exiting...")
@@ -354,3 +377,10 @@ if __name__ == "__main__":
     else:
         print("Invalid input. Exiting...")
         exit()
+
+    if isinstance(source_image, int):  # Check if source is an integer (webcam index)
+        user_check = input("\n\n Do you want to start drawing? (yes/no) [yes]: ").strip().lower()
+        if user_check == 'yes' or user_check == '':
+            print("Press q to exit")
+            draw = True
+            check_colors_with_source(source_input, results, draw)
