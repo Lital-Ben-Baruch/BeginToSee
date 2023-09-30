@@ -204,15 +204,28 @@ def create_colors_mask(frame, color_values, source):
 
 def check_colors_with_source(source, color_values, draw_flag):
     """Check the detected colors in real-time using a webcam or an image."""
+    global my_points
+    clear_canvas = False
     if isinstance(source, int):  # Check if source is an integer (webcam index)
         cap = cv2.VideoCapture(source)
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
+
+            key = cv2.waitKey(1)
+            if key & 0xFF == ord('c'):  # Check if 'c' key is pressed
+                clear_canvas = True
+                my_points = []  # Clear the list of points
+
             mask_colors, frame_res, color_points = create_colors_mask(frame, color_values, source)
 
-            # read the points from the color_points
+            # Clear the canvas if clear_canvas is True
+            if clear_canvas:
+                frame_res = frame.copy()
+                clear_canvas = False  # Reset the canvas clear flag
+
+            # read the points from the color_points and draw them
             if draw_flag:
                 if len(color_points):
                     for point in color_points:
@@ -224,9 +237,10 @@ def check_colors_with_source(source, color_values, draw_flag):
             combined_img = np.hstack([mask_colors, frame_res])
             cv2.imshow('Original Live Feed and Detection', combined_img)
 
-            key = cv2.waitKey(1)
+
             if key & 0xFF == ord('q'):  # Check if 'q' key is pressed
                 break
+
 
         cap.release()
 
@@ -381,6 +395,6 @@ if __name__ == "__main__":
     if isinstance(source_image, int):  # Check if source is an integer (webcam index)
         user_check = input("\n\n Do you want to start drawing? (yes/no) [yes]: ").strip().lower()
         if user_check == 'yes' or user_check == '':
-            print("Press q to exit")
+            print("Press q to exit and c to clear the drawing")
             draw = True
             check_colors_with_source(source_input, results, draw)
