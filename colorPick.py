@@ -171,7 +171,6 @@ def color_tracker(source, color_name: str = "default") -> dict:
 
 def create_colors_mask(frame, color_values):
     frame_result = frame.copy()
-    frame_result_1 = frame_result.copy()
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     combined_mask = np.zeros_like(frame[:, :, 0])  # Initialize a black mask
     counter = 0
@@ -183,16 +182,12 @@ def create_colors_mask(frame, color_values):
         mask = cv2.inRange(hsv, lower, upper)
         combined_mask = cv2.bitwise_or(combined_mask, mask)
         # Detecting contours, adding bounding boxes, and marking the center
-        # x_center, y_center = process_contours(combined_mask, frame_result)
-
-        x_center, y_center = process_contours_test(mask, frame_result_1)
+        x_center, y_center = process_contours(mask, frame_result)
         cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value[counter], cv2.FILLED)
         counter += 1
 
-        cv2.imshow('test frame_after', frame_result_1)
-
-    result = cv2.bitwise_and(frame, frame, mask=combined_mask)
-    return result, frame_result
+    mask_result = cv2.bitwise_and(frame, frame, mask=combined_mask)
+    return mask_result, frame_result
 
 
 def check_colors_with_source(source, color_values: dict) -> None:
@@ -241,7 +236,7 @@ def load_values_from_file(filename: str = 'saved_colors.json') -> dict:
             filename = new_filename
 
 
-def process_contours_test(mask, frame_result_1):
+def process_contours(mask, frame_to_draw=None):
     cnt_color = (255, 0, 0)  # Blue color for drawing the detected contours.
     cnt_thick = 3  # Thickness of the contour lines.
     largest_area = 0  # To keep track of the largest contour's area.
@@ -265,40 +260,11 @@ def process_contours_test(mask, frame_result_1):
                 cx = int(M["m10"] / M["m00"])
                 cy = int(M["m01"] / M["m00"])
             # Visualization:
-            # The detected contour is drawn on the img_res image for visualization.
-            cv2.drawContours(frame_result_1, contour, -1, cnt_color, cnt_thick)
+            # Draw contours if a 'frame' is provided
+            if frame_to_draw is not None:
+                cv2.drawContours(frame_to_draw, contour, -1, cnt_color, cnt_thick)
 
-            # Returns the x and y coordinates of the largest contour's center.
-    return cx, cy
-
-
-def process_contours(img, img_res):
-    cnt_color = (255, 0, 0)  # Blue color for drawing the detected contours.
-    cnt_thick = 3  # Thickness of the contour lines.
-    largest_area = 0  # To keep track of the largest contour's area.
-    cx, cy = 0, 0  # Initialize the center coordinates.
-
-    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-    # Processing Each Contour:
-    for contour in contours:
-        area = cv2.contourArea(contour)
-        # The contour is considered relevant if its area is greater than BB_AREA (to ignore noise) and if its area is
-        # larger than the previous largest contour's area.
-        if area > BB_AREA and area > largest_area:
-            largest_area = area
-            # Finding the Centroid:
-            # Calculates moments, which are a set of scalar values that provide information about the image's shape.
-            # The centroid (center) of the contour is calculated using these moments.
-            M = cv2.moments(contour)
-            if M["m00"] != 0:  # avoid division by zero
-                cx = int(M["m10"] / M["m00"])
-                cy = int(M["m01"] / M["m00"])
-            # Visualization:
-            # The detected contour is drawn on the img_res image for visualization.
-            cv2.drawContours(img_res, contour, -1, cnt_color, cnt_thick)
-
-            # Returns the x and y coordinates of the largest contour's center.
+    # Returns the x and y coordinates of the largest contour's center.
     return cx, cy
 
 

@@ -1,0 +1,42 @@
+{
+    "yellow": {
+        "hue_min": 22,
+        "hue_max": 39,
+        "sat_min": 90,
+        "sat_max": 198,
+        "val_min": 109,
+        "val_max": 224
+    },
+    "dark_blue": {
+        "hue_min": 95,
+        "hue_max": 118,
+        "sat_min": 70,
+        "sat_max": 152,
+        "val_min": 92,
+        "val_max": 160
+    },
+    "purple": {
+        "hue_min": 120,
+        "hue_max": 144,
+        "sat_min": 33,
+        "sat_max": 114,
+        "val_min": 90,
+        "val_max": 151
+    },
+    "pink": {
+        "hue_min": 168,
+        "hue_max": 179,
+        "sat_min": 103,
+        "sat_max": 160,
+        "val_min": 115,
+        "val_max": 241
+    },
+    "green": {
+        "hue_min": 41,
+        "hue_max": 58,
+        "sat_min": 69,
+        "sat_max": 126,
+        "val_min": 104,
+        "val_max": 158
+    }
+}
