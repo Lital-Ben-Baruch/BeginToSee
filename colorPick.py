@@ -21,6 +21,8 @@ draw = False
 # BGR : yellow, dark_blue, purple, pink, and green
 my_color_value = [[0, 255, 255], [255, 0, 0], [226, 43, 138], [147, 20, 255], [0, 252, 124]]
 my_points = []  # [x, y, color]
+my_points_del = []  # [x, y, color]
+
 colors = {
     "sky_blue": [85, 130, 100, 255, 100, 255],
     "green": [35, 85, 60, 255, 40, 255],
@@ -175,6 +177,23 @@ def draw_on_canvas(points, img_res):
         cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER, my_color_value[point[2]], cv2.FILLED)
 
 
+def delete_from_canvas(points, img_res, backup_image):
+    for point in points:
+        cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER, (0, 0, 0),
+                   cv2.FILLED)  # fill with black. for my original color my_color_value[point[2]]
+
+        # Create a mask for the erased area (white circle on a black background)
+        circular_mask = np.zeros_like(img_res)
+        x, y, r = point[0], point[1], BB_RADIUS_CENTER  # Modify these values according to your needs
+        cv2.circle(circular_mask, (x, y), r, (255, 255, 255), thickness=cv2.FILLED)
+
+        # Restore the circular region from the backup_image
+        circular_region = cv2.bitwise_and(backup_image, circular_mask)
+
+        img_res = cv2.bitwise_or(img_res, circular_region)
+    return img_res
+
+
 def create_colors_mask(frame, color_values, source):
     frame_result = frame.copy()
     new_point = []
@@ -205,6 +224,7 @@ def create_colors_mask(frame, color_values, source):
 def check_colors_with_source(source, color_values, draw_flag):
     """Check the detected colors in real-time using a webcam or an image."""
     global my_points
+    global my_points_del
     clear_canvas = False
     if isinstance(source, int):  # Check if source is an integer (webcam index)
         cap = cv2.VideoCapture(source)
@@ -212,12 +232,12 @@ def check_colors_with_source(source, color_values, draw_flag):
             ret, frame = cap.read()
             if not ret:
                 break
-
+            backup_image = frame.copy()
             key = cv2.waitKey(1)
             if key & 0xFF == ord('c'):  # Check if 'c' key is pressed
                 clear_canvas = True
                 my_points = []  # Clear the list of points
-
+                my_points_del = []
             mask_colors, frame_res, color_points = create_colors_mask(frame, color_values, source)
 
             # Clear the canvas if clear_canvas is True
@@ -229,18 +249,29 @@ def check_colors_with_source(source, color_values, draw_flag):
             if draw_flag:
                 if len(color_points):
                     for point in color_points:
-                        my_points.append(point)
+                        if point[2] != 0:
+                            my_points.append(point)
+                        else:
+                            my_points_del.append(point)
 
                 if len(my_points):
                     draw_on_canvas(my_points, frame_res)
 
+                if len(my_points_del):
+                    frame_res = delete_from_canvas(my_points_del, frame_res, backup_image)
+
+                    # Debug: Display the circular_mask
+                    circular_mask = np.zeros_like(frame_res)
+                    for point in my_points_del:
+                        x, y, r = point[0], point[1], BB_RADIUS_CENTER
+                        cv2.circle(circular_mask, (x, y), r, (255, 255, 255), thickness=cv2.FILLED)
+                    cv2.imshow('Circular Mask', circular_mask)
+
             combined_img = np.hstack([mask_colors, frame_res])
             cv2.imshow('Original Live Feed and Detection', combined_img)
 
-
             if key & 0xFF == ord('q'):  # Check if 'q' key is pressed
                 break
-
 
         cap.release()
 
@@ -385,16 +416,16 @@ if __name__ == "__main__":
         check_colors_with_source(source_input, results, draw)
         cv2.destroyAllWindows()
 
-    elif user_check == 'no':
-        print("Exiting...")
-        exit()
-    else:
-        print("Invalid input. Exiting...")
-        exit()
-
     if isinstance(source_image, int):  # Check if source is an integer (webcam index)
         user_check = input("\n\n Do you want to start drawing? (yes/no) [yes]: ").strip().lower()
         if user_check == 'yes' or user_check == '':
             print("Press q to exit and c to clear the drawing")
             draw = True
             check_colors_with_source(source_input, results, draw)
+
+        elif user_check == 'no':
+            print("Exiting...")
+            exit()
+        else:
+            print("Invalid input. Exiting...")
+            exit()
