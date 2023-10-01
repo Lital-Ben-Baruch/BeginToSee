@@ -17,7 +17,7 @@ MAX_HEIGHT = 500
 BB_RADIUS_CENTER = 8
 BB_AREA = 50
 draw = False
-
+eraser_resize = 1
 # BGR : yellow, dark_blue, purple, pink, and green
 my_color_value = [[0, 255, 255], [255, 0, 0], [226, 43, 138], [147, 20, 255], [0, 252, 124]]
 my_points = []  # [x, y, color]
@@ -177,14 +177,14 @@ def draw_on_canvas(points, img_res):
         cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER, my_color_value[point[2]], cv2.FILLED)
 
 
-def delete_from_canvas(points, img_res, backup_image):
+def delete_from_canvas(points, img_res, backup_image, eraser_resize):
     for point in points:
-        cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER, (0, 0, 0),
+        cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER*eraser_resize, (0, 0, 0),
                    cv2.FILLED)  # fill with black. for my original color my_color_value[point[2]]
 
         # Create a mask for the erased area (white circle on a black background)
         circular_mask = np.zeros_like(img_res)
-        x, y, r = point[0], point[1], BB_RADIUS_CENTER  # Modify these values according to your needs
+        x, y, r = point[0], point[1], BB_RADIUS_CENTER*eraser_resize  # Modify these values according to your needs
         cv2.circle(circular_mask, (x, y), r, (255, 255, 255), thickness=cv2.FILLED)
 
         # Restore the circular region from the backup_image
@@ -225,6 +225,7 @@ def check_colors_with_source(source, color_values, draw_flag):
     """Check the detected colors in real-time using a webcam or an image."""
     global my_points
     global my_points_del
+    global eraser_resize
     clear_canvas = False
     if isinstance(source, int):  # Check if source is an integer (webcam index)
         cap = cv2.VideoCapture(source)
@@ -258,12 +259,16 @@ def check_colors_with_source(source, color_values, draw_flag):
                     draw_on_canvas(my_points, frame_res)
 
                 if len(my_points_del):
-                    frame_res = delete_from_canvas(my_points_del, frame_res, backup_image)
+                    key = cv2.waitKey(1)
+                    if key & 0xFF == ord('b'):  # Check if 'b' key is pressed
+                        eraser_resize += 1
+
+                    frame_res = delete_from_canvas(my_points_del, frame_res, backup_image, eraser_resize)
 
                     # Debug: Display the circular_mask
                     circular_mask = np.zeros_like(frame_res)
                     for point in my_points_del:
-                        x, y, r = point[0], point[1], BB_RADIUS_CENTER
+                        x, y, r = point[0], point[1], BB_RADIUS_CENTER*eraser_resize
                         cv2.circle(circular_mask, (x, y), r, (255, 255, 255), thickness=cv2.FILLED)
                     cv2.imshow('Circular Mask', circular_mask)
 
