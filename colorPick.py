@@ -177,14 +177,14 @@ def draw_on_canvas(points, img_res):
         cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER, my_color_value[point[2]], cv2.FILLED)
 
 
-def delete_from_canvas(points, img_res, backup_image, eraser_resize):
+def delete_from_canvas(points, img_res, backup_image):
     for point in points:
-        cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER*eraser_resize, (0, 0, 0),
+        cv2.circle(img_res, (point[0], point[1]), point[3], (0, 0, 0),
                    cv2.FILLED)  # fill with black. for my original color my_color_value[point[2]]
 
         # Create a mask for the erased area (white circle on a black background)
         circular_mask = np.zeros_like(img_res)
-        x, y, r = point[0], point[1], BB_RADIUS_CENTER*eraser_resize  # Modify these values according to your needs
+        x, y, r = point[0], point[1], point[3]  # Modify these values according to your needs
         cv2.circle(circular_mask, (x, y), r, (255, 255, 255), thickness=cv2.FILLED)
 
         # Restore the circular region from the backup_image
@@ -213,7 +213,7 @@ def create_colors_mask(frame, color_values, source):
             cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value[counter], cv2.FILLED)
 
         if x_center != 0 and y_center != 0:
-            new_point.append([x_center, y_center, counter])
+            new_point.append([x_center, y_center, counter, BB_RADIUS_CENTER])
 
         counter += 1
 
@@ -227,6 +227,7 @@ def check_colors_with_source(source, color_values, draw_flag):
     global my_points_del
     global eraser_resize
     clear_canvas = False
+
     if isinstance(source, int):  # Check if source is an integer (webcam index)
         cap = cv2.VideoCapture(source)
         while True:
@@ -234,47 +235,59 @@ def check_colors_with_source(source, color_values, draw_flag):
             if not ret:
                 break
             backup_image = frame.copy()
+
             key = cv2.waitKey(1)
             if key & 0xFF == ord('c'):  # Check if 'c' key is pressed
                 clear_canvas = True
                 my_points = []  # Clear the list of points
                 my_points_del = []
-            mask_colors, frame_res, color_points = create_colors_mask(frame, color_values, source)
 
+            if key & 0xFF == ord('b'):  # Check if 'b' key is pressed
+                eraser_resize += 1
+
+            mask_colors, frame_res, color_points = create_colors_mask(frame, color_values, source)
+            circular_mask = np.zeros_like(frame_res)
             # Clear the canvas if clear_canvas is True
             if clear_canvas:
                 frame_res = frame.copy()
+                my_points = []  # Clear the list of points
+                my_points_del = []
                 clear_canvas = False  # Reset the canvas clear flag
-
+                circular_mask = np.zeros_like(frame_res)
             # read the points from the color_points and draw them
             if draw_flag:
                 if len(color_points):
                     for point in color_points:
                         if point[2] != 0:
                             my_points.append(point)
+
                         else:
+                            print('point before', point)
+                            point[3] *= eraser_resize
+                            print('point after', point)
                             my_points_del.append(point)
 
                 if len(my_points):
                     draw_on_canvas(my_points, frame_res)
-
-                if len(my_points_del):
-                    key = cv2.waitKey(1)
-                    if key & 0xFF == ord('b'):  # Check if 'b' key is pressed
-                        eraser_resize += 1
-
-                    frame_res = delete_from_canvas(my_points_del, frame_res, backup_image, eraser_resize)
+                    if len(my_points_del):
+                        frame_res = delete_from_canvas(my_points_del, frame_res, backup_image)
 
                     # Debug: Display the circular_mask
                     circular_mask = np.zeros_like(frame_res)
                     for point in my_points_del:
-                        x, y, r = point[0], point[1], BB_RADIUS_CENTER*eraser_resize
+                        x, y, r = point[0], point[1], point[3]
                         cv2.circle(circular_mask, (x, y), r, (255, 255, 255), thickness=cv2.FILLED)
-                    cv2.imshow('Circular Mask', circular_mask)
+                    # cv2.imshow('Circular Mask', circular_mask)
 
-            combined_img = np.hstack([mask_colors, frame_res])
+
+            top_row = np.hstack([mask_colors, frame_res])
+
+            bottom_row = np.hstack([circular_mask, circular_mask])
+            combined_img = np.vstack([top_row, bottom_row])
             cv2.imshow('Original Live Feed and Detection', combined_img)
-
+            # else:
+            #     combined_img = np.hstack([mask_colors, frame_res])
+            #     cv2.imshow('Original Live Feed and Detection', combined_img)
             if key & 0xFF == ord('q'):  # Check if 'q' key is pressed
                 break
 
