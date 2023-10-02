@@ -18,8 +18,23 @@ BB_RADIUS_CENTER = 8
 BB_AREA = 50
 draw = False
 eraser_resize = 1
-# BGR : yellow, dark_blue, purple, pink, and green
-my_color_value = [[0, 255, 255], [255, 0, 0], [226, 43, 138], [147, 20, 255], [0, 252, 124]]
+
+my_color_value_dict = {  # BGR
+    "sky_blue": [255, 255, 0],
+    "green": [0, 204, 0],
+    "light_green": [0, 255, 0],
+    "orange": [0, 128, 255],
+    "red": [0, 0, 255],
+    "yellow": [0, 255, 255],
+    "dark_blue": [255, 0, 0],
+    "purple": [255, 0, 127],
+    "pink": [255, 0, 255],
+    "brown": [0, 51, 102],
+    "gray": [128, 128, 128],
+    "black": [0, 0, 0],
+    "default": [255, 255, 255]
+}
+
 my_points = []  # [x, y, color]
 my_points_del = []  # [x, y, color]
 
@@ -174,13 +189,13 @@ def color_tracker(source, color_name: str = "default") -> dict:
 
 def draw_on_canvas(points, img_res):
     for point in points:
-        cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER, my_color_value[point[2]], cv2.FILLED)
+        cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER, my_color_value_dict[point[2]], cv2.FILLED)
 
 
 def delete_from_canvas(points, img_res, backup_image):
     for point in points:
         cv2.circle(img_res, (point[0], point[1]), point[3], (0, 0, 0),
-                   cv2.FILLED)  # fill with black. for my original color my_color_value[point[2]]
+                   cv2.FILLED)  # fill with black. for my original color my_color_value_dict[point[2]]
 
         # Create a mask for the erased area (white circle on a black background)
         circular_mask = np.zeros_like(img_res)
@@ -210,10 +225,11 @@ def create_colors_mask(frame, color_values, source):
         # Detecting contours, adding bounding boxes, and marking the center
         x_center, y_center = process_contours(mask, frame_result)
         if isinstance(source, int):  # Check if source is an integer (webcam index)
-            cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value[counter], cv2.FILLED)
+            # cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value[counter], cv2.FILLED)
+            cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value_dict[color_name], cv2.FILLED)
 
         if x_center != 0 and y_center != 0:
-            new_point.append([x_center, y_center, counter, BB_RADIUS_CENTER])
+            new_point.append([x_center, y_center, color_name, BB_RADIUS_CENTER])
 
         counter += 1
 
@@ -256,20 +272,20 @@ def check_colors_with_source(source, color_values, draw_flag):
                 circular_mask = np.zeros_like(frame_res)
             # read the points from the color_points and draw them
             if draw_flag:
-                if len(color_points):
+                eraser_color = 'yellow'
+                if color_points:
                     for point in color_points:
-                        if point[2] != 0:
+                        if point[2] != eraser_color:
                             my_points.append(point)
-
-                        else:
+                        elif my_points:
                             print('point before', point)
                             point[3] *= eraser_resize
                             print('point after', point)
                             my_points_del.append(point)
 
-                if len(my_points):
+                if len(my_points) != 0:
                     draw_on_canvas(my_points, frame_res)
-                    if len(my_points_del):
+                    if len(my_points_del) != 0:
                         frame_res = delete_from_canvas(my_points_del, frame_res, backup_image)
 
                     # Debug: Display the circular_mask
@@ -279,9 +295,7 @@ def check_colors_with_source(source, color_values, draw_flag):
                         cv2.circle(circular_mask, (x, y), r, (255, 255, 255), thickness=cv2.FILLED)
                     # cv2.imshow('Circular Mask', circular_mask)
 
-
             top_row = np.hstack([mask_colors, frame_res])
-
             bottom_row = np.hstack([circular_mask, circular_mask])
             combined_img = np.vstack([top_row, bottom_row])
             cv2.imshow('Original Live Feed and Detection', combined_img)
@@ -354,6 +368,7 @@ def process_contours(mask, frame_to_draw=None):
 
 
 if __name__ == "__main__":
+    colors_to_process =[]
     src_input = input("Do you want to use a webcam? (yes/no) [yes]: ").strip().lower()
     if src_input == 'yes' or src_input == '':
         source_image = 0
