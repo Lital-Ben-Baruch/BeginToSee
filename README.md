@@ -20,31 +20,23 @@ In the "colorPick.py" branch of this repository, we've added some exciting new f
 These enhancements provide more control and interactivity when using the `colorPick.py` script. Be sure to check out the updated code and demonstration videos to see these features in action!
 
 ## Videos
-Explore the capabilities of the `colorPick.py` script through a series of demonstration videos:
+Explore the videos in the main branch to learn how to utilize a webcam or image as the source for color detection. Discover techniques for real-time detection of predefined and custom colors, incorporating saved color values, and visualizing the results with both images and video feeds.
 
-- **[Video 1](https://www.youtube.com/watch?v=nVIYtBjiknQ) - Color Detection with Webcam (Default Options)**
-    - Use a webcam as the image source.
+Continue to explore the capabilities of the `colorPick.py` script in the next videos of the demonstration series:
+
+- **[Video 5](https://www.youtube.com/watch?v=nVIYtBjiknQ) - Color Detection with Webcam (Default Options)**
+    - Utilize a webcam as the image source.
     - Detect predefined colors.
     - Load color values from an existing JSON file (`saved_colors_web.json`).
-    - Observe real-time color detection.
-
-- **[Video 2](https://www.youtube.com/watch?v=fknPJysUATI) - Color Detection with Webcam (New Colors)**
-    - Use a webcam as the image source.
-    - Choose custom colors to detect.
+    - Observe real-time color painting.
+      
+- **[Video 6](https://www.youtube.com/watch?v=nVIYtBjiknQ) - Color Detection with Webcam (Default Options)**
+    - Employ a webcam as the image source.
+    - Detect custom colors for painting.
     - Initialize color ranges for new colors.
-    - Experience real-time color detection.
+    - Experience real-time color painting.
+    Explore the capabilities of the `colorPick.py` script through a series of demonstration videos:
 
-- **[Video 3](https://youtu.be/v0LJaIhnoO0) - Color Detection with Image (Default Options)**
-    - Select an image as the source.
-    - Detect predefined colors.
-    - Load color values from an existing JSON file (`saved_colors_img.json`).
-    - View color detection results.
-
-- **[Video 4](https://youtu.be/0PIJ31NGWLA) - Color Detection with Image (New Colors)**
-    - Choose an image as the source.
-    - Define custom colors for detection.
-    - Initialize color ranges for new colors.
-    - Visualize color detection outcomes.
 
 ## License
 This project is licensed under the [GNU General Public License (GPL)](LICENSE).
