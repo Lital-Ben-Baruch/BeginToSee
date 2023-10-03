@@ -37,7 +37,6 @@ my_color_value_dict = {  # BGR
 
 my_points = []  # [x, y, color]
 my_points_del = []  # [x, y, color]
-
 colors = {
     "sky_blue": [85, 130, 100, 255, 100, 255],
     "green": [35, 85, 60, 255, 40, 255],
@@ -187,9 +186,45 @@ def color_tracker(source, color_name: str = "default") -> dict:
     return color_values
 
 
-def draw_on_canvas(points, img_res):
+def draw_on_canvas(points, img_res, color_masks_1d, frame_width, frame_height):
+    color_mask = np.zeros((frame_height, frame_width), dtype=np.uint8)
+    color_masks_dict = {}
     for point in points:
+        # color_mask = np.zeros_like(img_res, dtype=np.uint8)
+        # color_mask = np.zeros((frame_height, frame_width), dtype=np.uint8)
+        pink_color = 255  # White
+        point_color = point[2]
+        # draw on canvas
         cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER, my_color_value_dict[point[2]], cv2.FILLED)
+        # draw on mask
+        cv2.circle(color_mask, (point[0], point[1]), BB_RADIUS_CENTER, pink_color, cv2.FILLED)
+        # Store the color mask in the dictionary based on color
+        # white_pixel_count = np.count_nonzero(color_mask)
+
+        # Store the color mask in the dictionary based on color name
+        color_masks_dict[point_color] = color_mask
+        color_masks_1d[point_color] = color_mask
+        # if point_color in color_masks_1d:
+        #     color_masks_1d[point_color] = cv2.bitwise_or(color_masks_1d[point_color], color_mask)
+        #     # color_masks[point_color] = cv2.bitwise_or(color_masks[point_color], color_mask)
+        # else:
+        #     # color_masks[point_color] = color_mask
+        #     color_masks_1d[point_color] = color_mask
+    return color_masks_dict
+
+def process_frame(frame, pink_mask):
+    # Set the pink color value (BGR format)
+    pink_color = (255, 0, 255)  # (B, G, R)
+
+    # Ensure the pink mask dimensions match the frame dimensions
+    if frame.shape[:2] != pink_mask.shape[:2]:
+        pink_mask = cv2.resize(pink_mask, (frame.shape[1], frame.shape[0]))
+
+    # Create an image with pink color wherever the 'pink_mask' is non-zero
+    frame_with_pink = frame.copy()
+    frame_with_pink[pink_mask != 0] = pink_color
+
+    return frame_with_pink
 
 
 def delete_from_canvas(points, img_res, backup_image):
@@ -226,7 +261,8 @@ def create_colors_mask(frame, color_values, source):
         x_center, y_center = process_contours(mask, frame_result)
         if isinstance(source, int):  # Check if source is an integer (webcam index)
             # cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value[counter], cv2.FILLED)
-            cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value_dict[color_name], cv2.FILLED)
+            cv2.circle(frame_result, (x_center, y_center), BB_RADIUS_CENTER, my_color_value_dict[color_name],
+                       cv2.FILLED)
 
         if x_center != 0 and y_center != 0:
             new_point.append([x_center, y_center, color_name, BB_RADIUS_CENTER])
@@ -250,8 +286,21 @@ def check_colors_with_source(source, color_values, draw_flag):
             ret, frame = cap.read()
             if not ret:
                 break
-            backup_image = frame.copy()
 
+            result_frame = frame.copy()
+            backup_image = frame.copy()
+            list_length = len(my_points_del)
+            # Initialize an empty dictionary to store masks by color
+            color_masks = {}
+            color_masks_1d = {}
+            color_masks_dict = {}
+            # Initialize a mask with the same shape as your image
+            blank_mask = np.zeros_like(frame, dtype=np.uint8)
+            blank_mask_1d = np.zeros(frame.shape[:2], dtype=np.uint8)
+            # Populate the color_masks dictionary with blank masks
+            for color_name in color_values:
+                color_masks[color_name] = blank_mask.copy()
+                color_masks_1d[color_name] = blank_mask_1d.copy()
             key = cv2.waitKey(1)
             if key & 0xFF == ord('c'):  # Check if 'c' key is pressed
                 clear_canvas = True
@@ -284,7 +333,10 @@ def check_colors_with_source(source, color_values, draw_flag):
                             my_points_del.append(point)
 
                 if len(my_points) != 0:
-                    draw_on_canvas(my_points, frame_res)
+                    frame_width = int(cap.get(3))  # Width of the frame
+                    frame_height = int(cap.get(4))  # Height of the frame
+                    # draw_on_canvas(my_points, frame_res, color_masks, frame_width, frame_height)
+                    color_masks_dict = draw_on_canvas(my_points, frame_res, color_masks_1d, frame_width, frame_height)
                     if len(my_points_del) != 0:
                         frame_res = delete_from_canvas(my_points_del, frame_res, backup_image)
 
@@ -293,15 +345,38 @@ def check_colors_with_source(source, color_values, draw_flag):
                     for point in my_points_del:
                         x, y, r = point[0], point[1], point[3]
                         cv2.circle(circular_mask, (x, y), r, (255, 255, 255), thickness=cv2.FILLED)
-                    # cv2.imshow('Circular Mask', circular_mask)
 
-            top_row = np.hstack([mask_colors, frame_res])
-            bottom_row = np.hstack([circular_mask, circular_mask])
+                    list_length_after = len(my_points_del)
+                    if list_length_after == list_length:  # my_points_del was not updated
+                        my_points_del = []
+                        # applying the color mask on the image TODO
+
+
+
+            if 'pink' in color_masks_dict and np.any(color_masks_dict['pink']):
+                pink_mask = color_masks_dict['pink']
+                # Process the frame to add pink color based on 'pink_mask'
+                result_frame = process_frame(frame, pink_mask)
+                pink_mask = color_masks_dict['pink']
+                pink_mask_3_channel = cv2.merge((pink_mask, pink_mask, pink_mask))
+
+                # common_height = min(mask_colors.shape[0], frame_res.shape[0], pink_mask_3_channel.shape[0])
+                # # Resize all arrays to have the same height
+                # mask_colors_resized = cv2.resize(mask_colors, (mask_colors.shape[1], common_height))
+                # frame_res_resized = cv2.resize(frame_res, (frame_res.shape[1], common_height))
+                # pink_mask_3_channel_resized = cv2.resize(pink_mask_3_channel,
+                #                                           (pink_mask_3_channel.shape[1], common_height))
+
+                # Concatenate the resized arrays horizontally
+                top_row = np.hstack([mask_colors, frame_res, pink_mask_3_channel])
+                bottom_row = np.hstack([circular_mask, result_frame, pink_mask_3_channel])
+
+            else:
+                top_row = np.hstack([mask_colors, frame_res, frame_res])
+                bottom_row = np.hstack([circular_mask, result_frame, result_frame])
             combined_img = np.vstack([top_row, bottom_row])
             cv2.imshow('Original Live Feed and Detection', combined_img)
-            # else:
-            #     combined_img = np.hstack([mask_colors, frame_res])
-            #     cv2.imshow('Original Live Feed and Detection', combined_img)
+
             if key & 0xFF == ord('q'):  # Check if 'q' key is pressed
                 break
 
@@ -368,7 +443,7 @@ def process_contours(mask, frame_to_draw=None):
 
 
 if __name__ == "__main__":
-    colors_to_process =[]
+    colors_to_process = []
     src_input = input("Do you want to use a webcam? (yes/no) [yes]: ").strip().lower()
     if src_input == 'yes' or src_input == '':
         source_image = 0
