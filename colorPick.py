@@ -350,12 +350,12 @@ def check_colors_with_source(source, color_values, draw_flag):
                 pink_mask_3_channel = cv2.merge((pink_mask, pink_mask, pink_mask))
 
                 # Concatenate the resized arrays horizontally
-                top_row = np.hstack([mask_colors, frame_res, pink_mask_3_channel])
-                bottom_row = np.hstack([circular_mask, result_frame, pink_mask_3_channel])
+                top_row = np.hstack([mask_colors, frame_res])
+                bottom_row = np.hstack([circular_mask, result_frame])
 
             else:
-                top_row = np.hstack([mask_colors, frame_res, frame_res])
-                bottom_row = np.hstack([circular_mask, result_frame, result_frame])
+                top_row = np.hstack([mask_colors, frame_res])
+                bottom_row = np.hstack([circular_mask, result_frame])
             combined_img = np.vstack([top_row, bottom_row])
             cv2.imshow('Original Live Feed and Detection', combined_img)
 
