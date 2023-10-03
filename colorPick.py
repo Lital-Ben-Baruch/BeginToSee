@@ -187,30 +187,21 @@ def color_tracker(source, color_name: str = "default") -> dict:
 
 
 def draw_on_canvas(points, img_res, color_masks_1d, frame_width, frame_height):
-    color_mask = np.zeros((frame_height, frame_width), dtype=np.uint8)
     color_masks_dict = {}
     for point in points:
-        # color_mask = np.zeros_like(img_res, dtype=np.uint8)
-        # color_mask = np.zeros((frame_height, frame_width), dtype=np.uint8)
+        color_mask = np.zeros((frame_height, frame_width), dtype=np.uint8)
         pink_color = 255  # White
         point_color = point[2]
         # draw on canvas
         cv2.circle(img_res, (point[0], point[1]), BB_RADIUS_CENTER, my_color_value_dict[point[2]], cv2.FILLED)
         # draw on mask
         cv2.circle(color_mask, (point[0], point[1]), BB_RADIUS_CENTER, pink_color, cv2.FILLED)
-        # Store the color mask in the dictionary based on color
-        # white_pixel_count = np.count_nonzero(color_mask)
 
-        # Store the color mask in the dictionary based on color name
         color_masks_dict[point_color] = color_mask
         color_masks_1d[point_color] = color_mask
-        # if point_color in color_masks_1d:
-        #     color_masks_1d[point_color] = cv2.bitwise_or(color_masks_1d[point_color], color_mask)
-        #     # color_masks[point_color] = cv2.bitwise_or(color_masks[point_color], color_mask)
-        # else:
-        #     # color_masks[point_color] = color_mask
-        #     color_masks_1d[point_color] = color_mask
+
     return color_masks_dict
+
 
 def process_frame(frame, pink_mask):
     # Set the pink color value (BGR format)
@@ -346,12 +337,10 @@ def check_colors_with_source(source, color_values, draw_flag):
                         x, y, r = point[0], point[1], point[3]
                         cv2.circle(circular_mask, (x, y), r, (255, 255, 255), thickness=cv2.FILLED)
 
-                    list_length_after = len(my_points_del)
-                    if list_length_after == list_length:  # my_points_del was not updated
-                        my_points_del = []
-                        # applying the color mask on the image TODO
-
-
+                    # list_length_after = len(my_points_del)
+                    # if list_length_after == list_length:  # my_points_del was not updated
+                    #  my_points_del = []
+                    # applying the color mask on the image TODO
 
             if 'pink' in color_masks_dict and np.any(color_masks_dict['pink']):
                 pink_mask = color_masks_dict['pink']
@@ -359,13 +348,6 @@ def check_colors_with_source(source, color_values, draw_flag):
                 result_frame = process_frame(frame, pink_mask)
                 pink_mask = color_masks_dict['pink']
                 pink_mask_3_channel = cv2.merge((pink_mask, pink_mask, pink_mask))
-
-                # common_height = min(mask_colors.shape[0], frame_res.shape[0], pink_mask_3_channel.shape[0])
-                # # Resize all arrays to have the same height
-                # mask_colors_resized = cv2.resize(mask_colors, (mask_colors.shape[1], common_height))
-                # frame_res_resized = cv2.resize(frame_res, (frame_res.shape[1], common_height))
-                # pink_mask_3_channel_resized = cv2.resize(pink_mask_3_channel,
-                #                                           (pink_mask_3_channel.shape[1], common_height))
 
                 # Concatenate the resized arrays horizontally
                 top_row = np.hstack([mask_colors, frame_res, pink_mask_3_channel])
