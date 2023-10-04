@@ -5,6 +5,8 @@ An introductory repository dedicated to foundational image processing and comput
 Welcome to BeginToSee, your gateway to the exciting world of image processing and computer vision. This repository provides a comprehensive introduction to essential techniques using OpenCV and Python.
 
 ## Repository Contents
+- **camera_live_feed.py**: Basic Python script for capturing live video from a camera source and displaying it.
+- **SmartDocScanner.py**: Main script for the SmartDocScanner project, which aims to scan and correct documents presented to the camera.
 - **colorPick.py**: A Python script for real-time color detection and tracking using a webcam or image source. Choose from predefined or custom colors, initialize color ranges, and visualize color detection.
 
 ## Videos
