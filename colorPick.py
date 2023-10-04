@@ -7,7 +7,6 @@ Description: Detects and tracks specified colors in real-time using a webcam.
 Adjusts and saves HSV (Hue, Saturation, Value) bounds for different colors and tests the color detection.
 """
 import os
-
 import cv2
 import numpy as np
 import json
@@ -18,6 +17,8 @@ BB_RADIUS_CENTER = 8
 BB_AREA = 50
 draw = False
 eraser_resize = 1
+my_points = []  # [x_center, y_center, color_name, BB_RADIUS_CENTER]
+my_points_del = []  # [x_center, y_center, color_name, BB_RADIUS_CENTER]
 
 my_color_value_dict = {  # BGR
     "sky_blue": [255, 255, 0],
@@ -35,8 +36,7 @@ my_color_value_dict = {  # BGR
     "default": [255, 255, 255]
 }
 
-my_points = []  # [x, y, color]
-my_points_del = []  # [x, y, color]
+
 colors = {
     "sky_blue": [85, 130, 100, 255, 100, 255],
     "green": [35, 85, 60, 255, 40, 255],
@@ -318,9 +318,7 @@ def check_colors_with_source(source, color_values, draw_flag):
                         if point[2] != eraser_color:
                             my_points.append(point)
                         elif my_points:
-                            print('point before', point)
                             point[3] *= eraser_resize
-                            print('point after', point)
                             my_points_del.append(point)
 
                 if len(my_points) != 0:

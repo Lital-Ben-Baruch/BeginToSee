@@ -24,17 +24,17 @@ Explore the videos in the main branch to learn how to utilize a webcam or image 
 
 Continue to explore the capabilities of the `colorPick.py` script in the next videos of the demonstration series:
 
-- **[Video 5](https://www.youtube.com/watch?v=nVIYtBjiknQ) - Color Detection with Webcam (Default Options)**
+- **[Video 5](https://youtu.be/G5MfbkxwkVU) - Color Detection with Webcam (Default Options)**
     - Utilize a webcam as the image source.
     - Detect predefined colors.
     - Load color values from an existing JSON file (`saved_colors_web.json`).
     - Observe real-time color painting.
       
-- **[Video 6](https://www.youtube.com/watch?v=nVIYtBjiknQ) - Color Detection with Webcam (Default Options)**
-    - Employ a webcam as the image source.
+- **[Video 6](https://youtu.be/XNdBGDX9pRc) - Color Detection with Webcam (Default Options)**
+    - Utilize a webcam as the image source.
     - Detect custom colors for painting.
     - Initialize color ranges for new colors.
-    - Experience real-time color painting.
+    - Observe real-time color painting.
     Explore the capabilities of the `colorPick.py` script through a series of demonstration videos:
 
 
