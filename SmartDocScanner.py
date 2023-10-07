@@ -149,12 +149,31 @@ def get_warped_image(image, approx):
     return warped_image
 
 
-def check_image_dimensions(image):  # TODO
+def fix_image_dimensions_to_show(image, image_width, image_height):  # TODO
     """
     Checks the dimensions of the input image and provides information.
     Args:
         image (numpy.ndarray): The input image.
     """
+    if image.shape[0] != image_height and image.shape[1] != image_width :
+        # Calculate the scaling factor
+        width_ratio = 640 / image.shape[1]
+        height_ratio = 480 / image.shape[0]
+        ratio = min(width_ratio, height_ratio)
+
+        # Resize the image
+        resized_paper = cv2.resize(image, (int(image.shape[1] * ratio), int(image.shape[0] * ratio)))
+
+        # Calculate padding values
+        delta_w = 640 - resized_paper.shape[1]
+        delta_h = 480 - resized_paper.shape[0]
+        top, bottom = delta_h // 2, delta_h - (delta_h // 2)
+        left, right = delta_w // 2, delta_w - (delta_w // 2)
+
+        # Pad with zeros (black color)
+        color = [0, 0, 0]
+        image = cv2.copyMakeBorder(resized_paper, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+
     if len(image.shape) == 2:
         print("The image is grayscale (1D).")
         image = cv2.merge((image, image, image))
@@ -162,6 +181,8 @@ def check_image_dimensions(image):  # TODO
         print("The image is color (3D) with {} channels.".format(image.shape[2]))
     else:
         print("The image has an unexpected number of dimensions.")
+
+    return image
 
 
 def put_letters_on_corner_points(image, corner_points):
@@ -223,10 +244,13 @@ def main():
             warped_image = image_with_contours
 
         cv2.imshow('frame', frame)
-        cv2.imshow('processed_frame', processed_frame)
-        cv2.imshow('image_with_contours', image_with_contours)
-        cv2.imshow('warped_image', warped_image)
 
+        cv2.imshow('image_with_contours', image_with_contours)
+
+        processed_frame = fix_image_dimensions_to_show(processed_frame, IMAGE_WIDTH, IMAGE_HEIGHT)
+        warped_image = fix_image_dimensions_to_show(warped_image, IMAGE_WIDTH, IMAGE_HEIGHT)
+        cv2.imshow('processed_frame', processed_frame)
+        cv2.imshow('warped_image', warped_image)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
