@@ -243,14 +243,15 @@ def main():
             print("Array is empty")
             warped_image = image_with_contours
 
-        cv2.imshow('frame', frame)
-
-        cv2.imshow('image_with_contours', image_with_contours)
-
         processed_frame = fix_image_dimensions_to_show(processed_frame, IMAGE_WIDTH, IMAGE_HEIGHT)
         warped_image = fix_image_dimensions_to_show(warped_image, IMAGE_WIDTH, IMAGE_HEIGHT)
-        cv2.imshow('processed_frame', processed_frame)
-        cv2.imshow('warped_image', warped_image)
+
+        top_row = np.hstack([frame, image_with_contours])
+        bottom_row = np.hstack([processed_frame, warped_image])
+        combined_img = np.vstack([top_row, bottom_row])
+
+        cv2.imshow("All Images", combined_img)
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
