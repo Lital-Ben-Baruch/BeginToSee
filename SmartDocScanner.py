@@ -163,6 +163,27 @@ def check_image_dimensions(image):  # TODO
     else:
         print("The image has an unexpected number of dimensions.")
 
+def put_letters_on_corner_points(image, corner_points):
+    """
+    Adds letters to the corner points of an image contour.
+
+    Args:
+        image (numpy.ndarray): The input image.
+        corner_points (numpy.ndarray): The corner points of the contour to annotate with letters.
+
+    Returns:
+        None. The function modifies the input image in place.
+    """
+    # Define the letters you want to add
+    letters = ['A', 'B', 'C', 'D']
+
+    # Iterate through the corner_points and add the corresponding letter to the image
+    for i, point in enumerate(corner_points):
+        x, y = point[0]
+        letter = letters[i]
+        cv2.putText(image, letter, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (204, 102, 0), 2, cv2.LINE_AA)
+
+
 
 def main():
     # Create a VideoCapture object with camera index 0 (default camera)
@@ -192,6 +213,10 @@ def main():
             # The array is not empty
             print("max_area_contour", max_area_contour)
             warped_image = get_warped_image(frame, max_area_contour)
+
+            # Adding to image_with_contours letters for the corner points
+            put_letters_on_corner_points(image_with_contours, max_area_contour)
+
         else:
             # The array is empty
             print("Array is empty")
