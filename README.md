@@ -6,7 +6,7 @@ Welcome to BeginToSee, your gateway to the exciting world of image processing an
 
 ## Repository Contents
 - **camera_live_feed.py**: Basic Python script for capturing live video from a camera source and displaying it.
-- **SmartDocScanner.py**: Main script for the SmartDocScanner project, which aims to scan and correct documents presented to the camera.
+- **SmartDocScanner.py**: This is the main script for the SmartDocScanner project, which aims to scan and rectify documents with layout issues when captured using the camera.
 - **colorPick.py**: A Python script for real-time color detection and tracking using a webcam or image source. Choose from predefined or custom colors, initialize color ranges, and visualize color detection.
 - **select_points_in_image.py**: Python script for selecting points on an image interactively. Points are displayed on the image.
 
