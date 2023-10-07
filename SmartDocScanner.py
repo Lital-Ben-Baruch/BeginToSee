@@ -155,7 +155,7 @@ def fix_image_dimensions_to_show(image, image_width, image_height):  # TODO
     Args:
         image (numpy.ndarray): The input image.
     """
-    if image.shape[0] != image_height and image.shape[1] != image_width :
+    if image.shape[0] != image_height and image.shape[1] != image_width:
         # Calculate the scaling factor
         width_ratio = 640 / image.shape[1]
         height_ratio = 480 / image.shape[0]
@@ -217,6 +217,12 @@ def main():
     # Set the brightness (ID 10)
     capture.set(10, 100)
 
+    # Create a blank image
+    background_color = (0, 0, 0)  # Black
+    blank_image = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, 3), dtype=np.uint8)
+    blank_image[:] = background_color
+    # Place the text on the image
+
     while True:
         # Read a frame from the video capture
         ret, frame = capture.read()
@@ -241,13 +247,31 @@ def main():
         else:
             # The array is empty
             print("Array is empty")
-            warped_image = image_with_contours
+            text = 'No paper contour detected yet.'
+            # Get the size of the text
+            (text_width, text_height), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
+            # Calculate the center position
+            x = (IMAGE_WIDTH - text_width) // 2
+            y = (IMAGE_HEIGHT + text_height) // 2
+            blank_image_warp = blank_image.copy()
+            cv2.putText(blank_image_warp, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2,
+                        lineType=cv2.LINE_AA)
+            warped_image = blank_image_warp
+            blank_image_contour = blank_image.copy()
+            text_1 = 'No paper contour detected yet.'
+            cv2.putText(blank_image_contour, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2,
+                        lineType=cv2.LINE_AA)
+            image_with_contours = blank_image_contour
 
-        processed_frame = fix_image_dimensions_to_show(processed_frame, IMAGE_WIDTH, IMAGE_HEIGHT)
-        warped_image = fix_image_dimensions_to_show(warped_image, IMAGE_WIDTH, IMAGE_HEIGHT)
+        image_list = [frame, image_with_contours, processed_frame, warped_image]
+        titles = ["Original", "Contours", "Processed", "Warped"]
+        for idx, image in enumerate(image_list):
+            image_list[idx] = fix_image_dimensions_to_show(image, IMAGE_WIDTH, IMAGE_HEIGHT)
+            cv2.putText(image_list[idx], titles[idx], (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0),
+                        2)  # Adjust position, font, size, color, thickness as needed
 
-        top_row = np.hstack([frame, image_with_contours])
-        bottom_row = np.hstack([processed_frame, warped_image])
+        top_row = np.hstack([image_list[0], image_list[1]])
+        bottom_row = np.hstack([image_list[2], image_list[3]])
         combined_img = np.vstack([top_row, bottom_row])
 
         cv2.imshow("All Images", combined_img)
