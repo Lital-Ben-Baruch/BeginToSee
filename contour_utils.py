@@ -4,7 +4,7 @@ import numpy as np
 BOUNDING_BOX_AREA_THRESHOLD = 5000
 
 
-def find_and_draw_largest_contour(image, image_with_contours):
+def find_and_draw_largest_contour(image, image_with_contours, boundin_box_are_threshold):
     """
         Finds and draws the largest paper contour on the input image.
 
@@ -26,7 +26,7 @@ def find_and_draw_largest_contour(image, image_with_contours):
     for contour in contours:
         area = cv2.contourArea(contour)
 
-        if area > BOUNDING_BOX_AREA_THRESHOLD:
+        if area > boundin_box_are_threshold:
             arc_length = cv2.arcLength(contour, is_closed_curve)
             approx = cv2.approxPolyDP(contour, approximation_resolution * arc_length, is_closed_curve)
             if area > max_area and len(approx) == 4:  # 4 corners for a paper

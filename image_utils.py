@@ -1,42 +1,36 @@
 import cv2
 import numpy as np
 
-# Constants for image dimensions
-IMAGE_WIDTH = 640
-IMAGE_HEIGHT = 480
 
-# Preprocessing parameters
-GAUSSIAN_KERNEL_SIZE = (5, 5)
-GAUSSIAN_SIGMA = 1
-CANNY_THRESH1 = 50
-CANNY_THRESH2 = 50
-DILATION_KERNEL = np.ones((5, 5), np.uint8)
-
-
-def preprocess_image(image):
+def preprocess_image(image, gaussian_kernel_size=(5, 5), gaussian_sigma=1, canny_thresh1=50, canny_thresh2=50,
+                     dilation_kernel=np.ones((5, 5), np.uint8)):
     """
-        Preprocesses the input image for paper contour detection.
+    Preprocesses the input image for paper contour detection.
 
-        Args:
-            image (numpy.ndarray): The input image.
+    Args:
+        image (numpy.ndarray): The input image.
+        gaussian_kernel_size (tuple): Size of the Gaussian kernel for blurring.
+        gaussian_sigma (int): Standard deviation of the Gaussian kernel.
+        canny_thresh1 (int): First threshold for the Canny edge detector.
+        canny_thresh2 (int): Second threshold for the Canny edge detector.
+        dilation_kernel (numpy.ndarray): The kernel for dilation and erosion.
 
-        Returns:
-            numpy.ndarray: The preprocessed image.
-        """
+    Returns:
+        numpy.ndarray: The preprocessed image.
+    """
     # Convert to grayscale
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # Apply Gaussian blur
-    blurred_image = cv2.GaussianBlur(gray_image, GAUSSIAN_KERNEL_SIZE, GAUSSIAN_SIGMA)
+    blurred_image = cv2.GaussianBlur(gray_image, gaussian_kernel_size, gaussian_sigma)
     # Apply Canny edge detection
-    edges_image = cv2.Canny(blurred_image, CANNY_THRESH1, CANNY_THRESH2)
+    edges_image = cv2.Canny(blurred_image, canny_thresh1, canny_thresh2)
     # Perform dilation and erosion
-    dilated_image = cv2.dilate(edges_image, DILATION_KERNEL, iterations=1)
-    eroded_image = cv2.erode(dilated_image, DILATION_KERNEL, iterations=1)
+    dilated_image = cv2.dilate(edges_image, dilation_kernel, iterations=1)
+    eroded_image = cv2.erode(dilated_image, dilation_kernel, iterations=1)
     return eroded_image
 
 
-
-def fix_image_dimensions_to_show(image):
+def fix_image_dimensions_to_show(image, image_width, image_height):
     """
     Checks the dimensions of the input image and provides information.
     Args:
@@ -46,32 +40,25 @@ def fix_image_dimensions_to_show(image):
     """
     # Check if the image is grayscale
     if len(image.shape) == 2:
-        print("The image is grayscale (1D).")
-        image = cv2.merge((image, image, image))
-    elif len(image.shape) == 3:
-        if image.shape[2] == 3:
-            print("The image is color (3D) with {} channels.".format(image.shape[2]))
-        elif image.shape[2] == 4:
-            print("The image is in RGBA format.")
-            # Consider converting to RGB if necessary.
-            image = image[:, :, :3]
-        else:
-            print("The image has an unexpected number of channels.")
-            return image
-    else:
-        print("The image has an unexpected number of dimensions.")
+        # Convert grayscale to color (3 channels)
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    elif len(image.shape) == 3 and image.shape[2] == 4:
+        # The image is in RGBA format; consider converting to RGB if necessary.
+        image = image[:, :, :3]
+    elif len(image.shape) != 3 or image.shape[2] != 3:
+        print("The image has an unexpected number of channels or dimensions.")
         return image
 
     # Resize and pad if necessary
-    if image.shape[0] != IMAGE_HEIGHT or image.shape[1] != IMAGE_WIDTH:
-        width_ratio = IMAGE_WIDTH / image.shape[1]
-        height_ratio = IMAGE_HEIGHT / image.shape[0]
+    if image.shape[0] != image_height or image.shape[1] != image_width:
+        width_ratio = image_width / image.shape[1]
+        height_ratio = image_height / image.shape[0]
         ratio = min(width_ratio, height_ratio)
 
         resized_paper = cv2.resize(image, (int(image.shape[1] * ratio), int(image.shape[0] * ratio)))
 
-        delta_w = IMAGE_WIDTH - resized_paper.shape[1]
-        delta_h = IMAGE_HEIGHT - resized_paper.shape[0]
+        delta_w = image_width - resized_paper.shape[1]
+        delta_h = image_height - resized_paper.shape[0]
         top, bottom = delta_h // 2, delta_h - (delta_h // 2)
         left, right = delta_w // 2, delta_w - (delta_w // 2)
 
@@ -100,4 +87,3 @@ def put_letters_on_corner_points(image, corner_points):
         x, y = point[0]
         letter = letters[i]
         cv2.putText(image, letter, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (204, 102, 0), 2, cv2.LINE_AA)
-

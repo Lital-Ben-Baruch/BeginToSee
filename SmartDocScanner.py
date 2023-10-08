@@ -44,11 +44,12 @@ def main():
         image_with_contours = frame.copy()
         # Preprocess the frame
         processed_frame = preprocess_image(frame)
-        max_area_contour = find_and_draw_largest_contour(processed_frame, image_with_contours)
+        max_area_contour = find_and_draw_largest_contour(processed_frame, image_with_contours,
+                                                         BOUNDING_BOX_AREA_THRESHOLD)
 
         if np.any(max_area_contour):
             # The array is not empty
-            print("max_area_contour", max_area_contour)
+            # print("max_area_contour", max_area_contour)
             warped_image, rearrange_approx = get_warped_image(frame, max_area_contour)
 
             # Adding to image_with_contours letters for the corner points
@@ -76,7 +77,7 @@ def main():
         image_list = [frame, image_with_contours, processed_frame, warped_image]
         titles = ["Original", "Contours", "Processed", "Warped"]
         for idx, image in enumerate(image_list):
-            image_list[idx] = fix_image_dimensions_to_show(image)
+            image_list[idx] = fix_image_dimensions_to_show(image, IMAGE_WIDTH, IMAGE_HEIGHT)
             cv2.putText(image_list[idx], titles[idx], (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0),
                         2)  # Adjust position, font, size, color, thickness as needed
 
