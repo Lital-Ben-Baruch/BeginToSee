@@ -91,3 +91,34 @@ def put_letters_on_corner_points(image, corner_points):
         x, y = point[0]
         letter = letters[i]
         cv2.putText(image, letter, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (204, 102, 0), 2, cv2.LINE_AA)
+
+
+def generate_centered_text_image(text, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=1, font_thickness=2,
+                                 text_color=(255, 255, 255), image_width=640,
+                                 image_height=480):
+    # Create a blank black image
+    blank_image = np.zeros((image_height, image_width, 3), np.uint8)
+
+    # Get the size of the text
+    (text_width, text_height), _ = cv2.getTextSize(text, font, font_scale, font_thickness)
+
+    # Calculate the center position
+    x = (image_width - text_width) // 2
+    y = (image_height + text_height) // 2
+
+    # Put the text on the blank image
+    cv2.putText(blank_image, text, (x, y), font, font_scale, text_color, font_thickness, lineType=cv2.LINE_AA)
+
+    return blank_image
+
+
+def stack_images_to_show(image_list, titles, image_width=640, image_height=480):
+    for idx, image in enumerate(image_list):
+        image_list[idx] = fix_image_dimensions_to_show(image, image_width, image_height)
+        cv2.putText(image_list[idx], titles[idx], (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0),
+                    2)  # Adjust position, font, size, color, thickness as needed
+
+    top_row = np.hstack([image_list[0], image_list[1]])
+    bottom_row = np.hstack([image_list[2], image_list[3]])
+    combined_img = np.vstack([top_row, bottom_row])
+    return combined_img
