@@ -1,20 +1,19 @@
 import cv2
 import numpy as np
 
-BOUNDING_BOX_AREA_THRESHOLD = 5000
 
-
-def find_and_draw_largest_contour(image, image_with_contours, boundin_box_are_threshold):
+def find_and_draw_largest_contour(image, image_with_contours, bounding_box_are_threshold=5000):
     """
-        Finds and draws the largest paper contour on the input image.
+    Finds and draws the largest paper contour on the input image.
 
-        Args:
-            image (numpy.ndarray): The input image.
-            image_with_contours (numpy.ndarray): The image on which contours will be drawn.
+    Args:
+        image (numpy.ndarray): The input image.
+        image_with_contours (numpy.ndarray): The image on which contours will be drawn.
+        bounding_box_are_threshold (int): The threshold for the bounding box area of detected contours.
 
-        Returns:
-            numpy.ndarray: The largest paper contour.
-        """
+    Returns:
+        numpy.ndarray: The largest paper contour.
+    """
     contour_color = (255, 0, 0)
     contour_thickness = 5
     is_closed_curve = True
@@ -26,7 +25,7 @@ def find_and_draw_largest_contour(image, image_with_contours, boundin_box_are_th
     for contour in contours:
         area = cv2.contourArea(contour)
 
-        if area > boundin_box_are_threshold:
+        if area > bounding_box_are_threshold:
             arc_length = cv2.arcLength(contour, is_closed_curve)
             approx = cv2.approxPolyDP(contour, approximation_resolution * arc_length, is_closed_curve)
             if area > max_area and len(approx) == 4:  # 4 corners for a paper
@@ -38,6 +37,15 @@ def find_and_draw_largest_contour(image, image_with_contours, boundin_box_are_th
 
 
 def contour_centroid(approx):
+    """
+        Calculates the centroid of a contour.
+
+        Args:
+            approx (numpy.ndarray): The contour represented as a NumPy array of shape (4, 2).
+
+        Returns:
+            Tuple[int, int]: The (x, y) coordinates of the centroid.
+    """
     M = cv2.moments(approx)
     points = approx.reshape((4, 2))
 
@@ -56,7 +64,7 @@ def rearrange_corners(approx):
     Rearranges the corners of a paper contour to ensure a consistent order.
 
     Args:
-          approx (numpy.ndarray): The paper contour, represented as a NumPy array of shape (4, 1, 2).
+        approx (numpy.ndarray): The paper contour, represented as a NumPy array of shape (4, 2).
 
     Returns:
         numpy.ndarray: The rearranged paper contour, with corners sorted in a consistent order.
@@ -94,23 +102,24 @@ def rearrange_corners(approx):
     return approx
 
 
-def get_warped_image(image, approx):
+def get_warped_image(image, approx, paper_width=480, paper_height=640):
     """
-        Warps the input image using the provided paper contour.
+    Warps the input image using the provided paper contour.
 
-        Args:
-            image (numpy.ndarray): The input image.
-            approx (numpy.ndarray): The paper contour.
+    Args:
+        image (numpy.ndarray): The input image.
+        approx (numpy.ndarray): The paper contour.
+        paper_width (int): The width of the output paper.
+        paper_height (int): The height of the output paper.
 
-        Returns:
-            numpy.ndarray: The warped image.
-        """
-    paper_width, paper_height = 480, 640
+    Returns:
+        Tuple[numpy.ndarray, numpy.ndarray]: A tuple containing the warped image and the rearranged paper contour.
+    """
     rearrange_approx = rearrange_corners(approx)
 
     src_points = np.float32(rearrange_approx)
-    # dst_points =[[0, 0], [w, 0], [w, h], [0, h]]--> A  B  C  D
     dst_points = np.float32([[0, 0], [paper_width, 0], [paper_width, paper_height], [0, paper_height]])
     matrix = cv2.getPerspectiveTransform(src_points, dst_points)
     warped_image = cv2.warpPerspective(image, matrix, (paper_width, paper_height))
     return warped_image, rearrange_approx
+

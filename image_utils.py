@@ -33,8 +33,12 @@ def preprocess_image(image, gaussian_kernel_size=(5, 5), gaussian_sigma=1, canny
 def fix_image_dimensions_to_show(image, image_width, image_height):
     """
     Checks the dimensions of the input image and provides information.
+
     Args:
         image (numpy.ndarray): The input image.
+        image_width (int): The desired width of the output image.
+        image_height (int): The desired height of the output image.
+
     Returns:
         numpy.ndarray: The processed image.
     """

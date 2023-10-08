@@ -75,7 +75,7 @@ def main():
             image_with_contours = blank_image_contour
 
         image_list = [frame, image_with_contours, processed_frame, warped_image]
-        titles = ["Original", "Contours", "Processed", "Warped"]
+        titles = ["Original Feed", "Contours Detection", "Edge Detection", "Warped Paper Image"]
         for idx, image in enumerate(image_list):
             image_list[idx] = fix_image_dimensions_to_show(image, IMAGE_WIDTH, IMAGE_HEIGHT)
             cv2.putText(image_list[idx], titles[idx], (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0),
