@@ -12,6 +12,8 @@ IMAGE_HEIGHT = 480
 def main():
     # Create a VideoCapture object with camera index 0 (default camera)
     capture = cv2.VideoCapture(0)
+    # for my phone
+    # capture = cv2.VideoCapture("https://....../video")
 
     # Set the width of the frame (ID 3)
     capture.set(3, IMAGE_WIDTH)
