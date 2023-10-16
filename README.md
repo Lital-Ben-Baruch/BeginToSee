@@ -42,6 +42,26 @@ Explore the capabilities of the `colorPick.py` script through a series of demons
     - Initialize color ranges for new colors.
     - Visualize color detection outcomes.
 
+## Using Phone Camera Feed in SmartDocScanner.py
+
+To use the camera feed from your phone, follow these steps:
+
+1. Download the "IP Webcam" app from your phone's app store.
+2. Connect both your computer and phone to the same Wi-Fi network.
+3. Open the "IP Webcam" app on your phone and tap "Start server" to begin streaming.
+4. Copy the first IP address shown on your phone's screen (e.g., `https://your_phone_ip:8080/`).
+5. Paste this IP address into a web browser on your computer and press Enter.
+6. A web page will open; choose "video renderer" and select "Full screen."
+7. Right-click on the video, select "Inspect," and hover over the video element to find the "Current source" link.
+8. Copy the URL of the video source and paste it into your Python code as follows:
+
+   ``` python
+   Capture = cv2.VideoCapture("http://your_phone_ip:8080/video")
+   ```
+
+9. Replace `"your_phone_ip"` with the actual IP address from step 4.
+
+
 ## Dependencies
 
 This project relies on OpenCV, a popular computer vision library for Python. You can install it using the following command:
@@ -77,7 +97,7 @@ Contributions to this repository are welcome! Whether you want to improve the co
 
 ## Issues
 
-If you encounter any problems or have suggestions, please open an issue on this GitHub repository. We value your feedback.
+If you encounter any problems or have suggestions, please open an issue
 
 Enjoy your journey into the world of computer vision and image processing with BeginToSee!
 
