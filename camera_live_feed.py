@@ -1,13 +1,16 @@
 import cv2
-
+IMAGE_WIDTH = 640
+IMAGE_HEIGHT = 480
 # Create a VideoCapture object with camera index 0 (default camera)
 cap = cv2.VideoCapture(0)
+# for my phone
+# capture = cv2.VideoCapture("https://....../video")
 
 # Set the width of the frame (ID 3)
-cap.set(3, 640)
+cap.set(3, IMAGE_WIDTH)
 
 # Set the height of the frame (ID 4)
-cap.set(4, 480)
+cap.set(4, IMAGE_HEIGHT)
 
 # Set the brightness (ID 10)
 cap.set(10, 100)
