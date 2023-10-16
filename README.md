@@ -42,6 +42,9 @@ Explore the capabilities of the `colorPick.py` script through a series of demons
     - Initialize color ranges for new colors.
     - Visualize color detection outcomes.
 
+> Note: For more advanced functionality and features, check out the `visual-painter` branch of this repository. The "visual-painter" branch contains additional videos (5 and 6) with enhancements and interactive features, such as eraser functionality, eraser size magnification, and the ability to clear the image entirely. These enhancements provide more control and interactivity when using the script. Be sure to explore the updated code and demonstration videos in that branch to see these features in action!
+
+
 ## Using Phone Camera Feed in SmartDocScanner.py
 
 To use the camera feed from your phone, follow these steps:
